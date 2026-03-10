@@ -7,7 +7,9 @@ import "./memaPulse.css";
 type StoreConfig = {
   key: string;
   label: string;
+  shortLabel: string;
   table: string;
+  color: string;
 };
 
 type RawRow = Record<string, any>;
@@ -16,18 +18,59 @@ type LiveOrder = {
   uid: string;
   storeKey: string;
   storeLabel: string;
+  shortStoreLabel: string;
   orderNumber: string;
   amount: number;
   createdAt: string;
   itemsText: string;
+  qty: number;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+};
+
+type KPIStats = {
+  orderRevenue: number;
+  avgOrderValue: number;
+  totalOrders: number;
+  monthRevenue: number;
 };
 
 const STORE_CONFIGS: StoreConfig[] = [
-  { key: "georgia", label: "Meama Georgia", table: "orders" },
-  { key: "collect", label: "Meama Collect", table: "meama_collect_orders" },
-  { key: "franchise", label: "Meama Franchise", table: "franchise_orders" },
-  { key: "vending", label: "Meama Vending", table: "vending_orders" },
-  { key: "b2b", label: "MEAMA B2B", table: "b2b_orders" },
+  {
+    key: "vending",
+    label: "Meama Vending",
+    shortLabel: "Vending",
+    table: "vending_orders",
+    color: "#31d7ff",
+  },
+  {
+    key: "georgia",
+    label: "Meama Georgia",
+    shortLabel: "Georgia",
+    table: "orders",
+    color: "#3ddc97",
+  },
+  {
+    key: "collect",
+    label: "Meama Collect",
+    shortLabel: "Collect",
+    table: "meama_collect_orders",
+    color: "#ffbf3c",
+  },
+  {
+    key: "b2b",
+    label: "MEAMA B2B",
+    shortLabel: "B2B",
+    table: "b2b_orders",
+    color: "#f26ac9",
+  },
+  {
+    key: "franchise",
+    label: "Meama Franchise",
+    shortLabel: "Franchise",
+    table: "franchise_orders",
+    color: "#9d82ff",
+  },
 ];
 
 function pickFirst(row: RawRow, keys: string[], fallback: any = null) {
@@ -109,6 +152,41 @@ function toItemsText(row: RawRow) {
   return "Order items";
 }
 
+function toQty(row: RawRow) {
+  const raw = pickFirst(
+    row,
+    [
+      "total_quantity",
+      "quantity",
+      "qty",
+      "item_count",
+      "line_items_count",
+      "capsules_qty",
+    ],
+    1
+  );
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : 1;
+}
+
+function toPaymentStatus(row: RawRow) {
+  const raw = pickFirst(
+    row,
+    ["payment_status", "financial_status", "payment", "status"],
+    "success"
+  );
+  return String(raw ?? "success");
+}
+
+function toFulfillmentStatus(row: RawRow) {
+  const raw = pickFirst(
+    row,
+    ["fulfillment_status", "fulfillment", "delivery_status"],
+    "fulfilled"
+  );
+  return String(raw ?? "fulfilled");
+}
+
 function normalizeOrder(row: RawRow, store: StoreConfig): LiveOrder {
   const orderNumber = toOrderNumber(row);
   const createdAt = toCreatedAt(row);
@@ -123,10 +201,14 @@ function normalizeOrder(row: RawRow, store: StoreConfig): LiveOrder {
     uid: `${store.key}-${String(rowId)}`,
     storeKey: store.key,
     storeLabel: store.label,
+    shortStoreLabel: store.shortLabel,
     orderNumber,
     amount,
     createdAt,
     itemsText: toItemsText(row),
+    qty: toQty(row),
+    paymentStatus: toPaymentStatus(row),
+    fulfillmentStatus: toFulfillmentStatus(row),
   };
 }
 
@@ -156,32 +238,66 @@ function formatMoney(value: number) {
   })}`;
 }
 
+function getStoreColor(storeKey: string) {
+  return STORE_CONFIGS.find((s) => s.key === storeKey)?.color ?? "#31d7ff";
+}
+
 function getStoreIcon(storeKey: string) {
   switch (storeKey) {
     case "vending":
-      return "☕";
+      return "VE";
     case "georgia":
-      return "🏪";
+      return "GE";
     case "collect":
-      return "📦";
+      return "CL";
     case "b2b":
-      return "🏢";
+      return "B2";
     case "franchise":
-      return "🔑";
+      return "FR";
     default:
-      return "🛍️";
+      return "OR";
   }
+}
+
+function normalizePaymentStatus(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes("paid") || s.includes("success")) return "Success";
+  if (s.includes("pending")) return "Pending";
+  if (s.includes("fail") || s.includes("cancel")) return "Failed";
+  return "Success";
+}
+
+function normalizeFulfillmentStatus(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes("fulfilled")) return "Fulfilled";
+  if (s.includes("partial")) return "Partial";
+  if (s.includes("unfulfilled") || s.includes("pending")) return "Pending";
+  return "Fulfilled";
+}
+
+function buildChartPath(values: number[], width: number, height: number, padding = 14) {
+  if (!values.length) return "";
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const span = Math.max(max - min, 1);
+
+  return values
+    .map((value, index) => {
+      const x =
+        padding + (index * (width - padding * 2)) / Math.max(values.length - 1, 1);
+      const y =
+        height - padding - ((value - min) / span) * (height - padding * 2);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
 }
 
 export default function MemaPulsePage() {
   const [orders, setOrders] = useState<LiveOrder[]>([]);
-  const [monthRevenue, setMonthRevenue] = useState(0);
-  const [monthOrders, setMonthOrders] = useState(0);
-  const [todayRevenue, setTodayRevenue] = useState(0);
-  const [todayOrders, setTodayOrders] = useState(0);
   const [toastOrder, setToastOrder] = useState<LiveOrder | null>(null);
   const [now, setNow] = useState(new Date());
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState("all");
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -198,42 +314,26 @@ export default function MemaPulsePage() {
         .channel(`mema-pulse-${store.table}`)
         .on(
           "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: store.table,
-          },
+          { event: "INSERT", schema: "public", table: store.table },
           (payload) => {
             const liveOrder = normalizeOrder(payload.new as RawRow, store);
-
-            setOrders((prev) => [liveOrder, ...prev].slice(0, 50));
-
-            if (isSameMonth(liveOrder.createdAt, new Date())) {
-              setMonthRevenue((prev) => prev + liveOrder.amount);
-              setMonthOrders((prev) => prev + 1);
-            }
-
-            if (isSameDay(liveOrder.createdAt, new Date())) {
-              setTodayRevenue((prev) => prev + liveOrder.amount);
-              setTodayOrders((prev) => prev + 1);
-            }
+            setOrders((prev) =>
+              [liveOrder, ...prev].sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )
+            );
 
             setToastOrder(liveOrder);
-
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-            toastTimerRef.current = setTimeout(() => {
-              setToastOrder(null);
-            }, 5000);
+            toastTimerRef.current = setTimeout(() => setToastOrder(null), 5000);
           }
         )
         .subscribe();
     });
 
     return () => {
-      channels.forEach((channel) => {
-        supabase.removeChannel(channel);
-      });
-
+      channels.forEach((channel) => supabase.removeChannel(channel));
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
@@ -248,262 +348,451 @@ export default function MemaPulsePage() {
             .from(store.table)
             .select("*")
             .order("created_at", { ascending: false })
-            .limit(100);
+            .limit(150);
 
-          if (error) {
-            throw new Error(`${store.table}: ${error.message}`);
-          }
-
-          const normalized = (data ?? []).map((row) => normalizeOrder(row, store));
-          return normalized;
+          if (error) throw new Error(`${store.table}: ${error.message}`);
+          return (data ?? []).map((row) => normalizeOrder(row, store));
         })
       );
 
       const merged = responses
         .flat()
         .filter((row) => row.createdAt)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        .sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-      const currentDate = new Date();
-
-      let nextMonthRevenue = 0;
-      let nextMonthOrders = 0;
-      let nextTodayRevenue = 0;
-      let nextTodayOrders = 0;
-
-      for (const order of merged) {
-        if (isSameMonth(order.createdAt, currentDate)) {
-          nextMonthRevenue += order.amount;
-          nextMonthOrders += 1;
-        }
-
-        if (isSameDay(order.createdAt, currentDate)) {
-          nextTodayRevenue += order.amount;
-          nextTodayOrders += 1;
-        }
-      }
-
-      setOrders(merged.slice(0, 50));
-      setMonthRevenue(nextMonthRevenue);
-      setMonthOrders(nextMonthOrders);
-      setTodayRevenue(nextTodayRevenue);
-      setTodayOrders(nextTodayOrders);
+      setOrders(merged);
     } catch (error: any) {
       setLoadError(error?.message || "Failed to load dashboard data.");
     }
   }
 
-  const clockText = useMemo(() => {
-    return now.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-  }, [now]);
+  const filteredOrders = useMemo(() => {
+    if (activeFilter === "all") return orders.slice(0, 31);
+    return orders.filter((o) => o.storeKey === activeFilter).slice(0, 31);
+  }, [orders, activeFilter]);
 
-  const dateText = useMemo(() => {
-    return now.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
+  const todayOrdersData = useMemo(() => {
+    return orders.filter((order) => isSameDay(order.createdAt, now));
+  }, [orders, now]);
+
+  const monthOrdersData = useMemo(() => {
+    return orders.filter((order) => isSameMonth(order.createdAt, now));
+  }, [orders, now]);
+
+  const kpiStats: KPIStats = useMemo(() => {
+    const orderRevenue = todayOrdersData.reduce((sum, order) => sum + order.amount, 0);
+    const totalOrders = todayOrdersData.length;
+    const avgOrderValue = totalOrders ? orderRevenue / totalOrders : 0;
+    const monthRevenue = monthOrdersData.reduce((sum, order) => sum + order.amount, 0);
+
+    return {
+      orderRevenue,
+      avgOrderValue,
+      totalOrders,
+      monthRevenue,
+    };
+  }, [todayOrdersData, monthOrdersData]);
+
+  const monthComparison = useMemo(() => {
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthOrders = orders.filter((order) => isSameMonth(order.createdAt, previousMonth));
+    const prevRevenue = prevMonthOrders.reduce((sum, order) => sum + order.amount, 0);
+    const prevTotal = prevMonthOrders.length;
+    const prevAov = prevTotal ? prevRevenue / prevTotal : 0;
+
+    function pct(current: number, previous: number) {
+      if (!previous) return current ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    }
+
+    return {
+      revenuePct: pct(kpiStats.orderRevenue, prevRevenue),
+      aovPct: pct(kpiStats.avgOrderValue, prevAov),
+      ordersPct: pct(kpiStats.totalOrders, prevTotal),
+      monthRevenuePct: pct(kpiStats.monthRevenue, prevRevenue),
+    };
+  }, [orders, now, kpiStats]);
+
+  const hourlyData = useMemo(() => {
+    const startHour = 7;
+    const endHour = 22;
+    const points: { hour: number; value: number }[] = [];
+
+    for (let hour = startHour; hour <= endHour; hour++) {
+      const hourSum = todayOrdersData
+        .filter((order) => new Date(order.createdAt).getHours() === hour)
+        .reduce((sum, order) => sum + order.amount, 0);
+
+      points.push({ hour, value: hourSum });
+    }
+
+    return points;
+  }, [todayOrdersData]);
+
+  const chartValues = hourlyData.map((p) => p.value);
+  const chartPath = buildChartPath(chartValues, 760, 280);
+  const hourlyTotal = chartValues.reduce((a, b) => a + b, 0);
+
+  const storeShare = useMemo(() => {
+    const totals = STORE_CONFIGS.map((store) => {
+      const revenue = todayOrdersData
+        .filter((order) => order.storeKey === store.key)
+        .reduce((sum, order) => sum + order.amount, 0);
+
+      return {
+        ...store,
+        revenue,
+      };
     });
-  }, [now]);
+
+    const totalRevenue = totals.reduce((sum, item) => sum + item.revenue, 0);
+
+    return {
+      totalRevenue,
+      rows: totals.map((item) => ({
+        ...item,
+        percent: totalRevenue ? (item.revenue / totalRevenue) * 100 : 0,
+      })),
+    };
+  }, [todayOrdersData]);
+
+  const donutGradient = useMemo(() => {
+    const rows = storeShare.rows;
+    const total = rows.reduce((sum, row) => sum + row.percent, 0) || 100;
+    let cursor = 0;
+
+    const segments = rows.map((row) => {
+      const start = (cursor / total) * 100;
+      cursor += row.percent;
+      const end = (cursor / total) * 100;
+      return `${row.color} ${start}% ${end}%`;
+    });
+
+    return `conic-gradient(${segments.join(", ")})`;
+  }, [storeShare]);
+
+  const clockText = useMemo(
+    () =>
+      now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }),
+    [now]
+  );
+
+  const dateText = useMemo(
+    () =>
+      now.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    [now]
+  );
 
   return (
-    <main className="pulse-page">
+    <main className="pulse-page pulse-page-alt">
       <div className="pulse-bg-orb pulse-bg-orb-1" />
       <div className="pulse-bg-orb pulse-bg-orb-2" />
       <div className="pulse-bg-orb pulse-bg-orb-3" />
 
-      <div className="pulse-shell">
+      <div className="pulse-shell-alt">
         {toastOrder && (
-          <div className={`pulse-toast pulse-toast-${toastOrder.storeKey}`}>
-            <div className={`pulse-toast-icon pulse-toast-icon-${toastOrder.storeKey}`}>
+          <div className="pulse-toast-alt">
+            <div
+              className="pulse-toast-alt-accent"
+              style={{ background: getStoreColor(toastOrder.storeKey) }}
+            />
+            <div className="pulse-toast-alt-icon">
               {getStoreIcon(toastOrder.storeKey)}
             </div>
 
-            <div className="pulse-toast-content">
-              <div className="pulse-toast-title">
-                New Order {toastOrder.orderNumber ? `#${toastOrder.orderNumber}` : ""}
+            <div className="pulse-toast-alt-content">
+              <div className="pulse-toast-alt-title">
+                New Order #{toastOrder.orderNumber}
               </div>
-              <div className="pulse-toast-subtitle">
-                {toastOrder.storeLabel} • {toastOrder.itemsText}
+              <div className="pulse-toast-alt-subtitle">
+                {toastOrder.storeLabel} — {toastOrder.itemsText}
               </div>
             </div>
 
-            <div className="pulse-toast-amount">{formatMoney(toastOrder.amount)}</div>
+            <div className="pulse-toast-alt-amount">{formatMoney(toastOrder.amount)}</div>
           </div>
         )}
 
-        <header className="pulse-topbar">
-          <div className="pulse-topbar-left">
-            <div className="pulse-eyebrow">LIVE OPERATIONS</div>
+        <header className="pulse-header-alt">
+          <div className="pulse-header-alt-left">
+            <div className="pulse-brand-alt">MEMA</div>
+            <div className="pulse-divider-alt" />
+            <div className="pulse-subbrand-alt">Live Operations</div>
 
-            <div className="pulse-brand-row">
-              <div className="pulse-brand">MEMA</div>
-              <div className="pulse-brand-sub">PULSE</div>
-
-              <div className="pulse-live-chip">
-                <span className="pulse-live-dot" />
-                <span>LIVE</span>
-              </div>
+            <div className="pulse-live-pill-alt">
+              <span className="pulse-live-pill-dot-alt" />
+              LIVE
             </div>
           </div>
 
-          <div className="pulse-topbar-right">
-            <div className="pulse-date">{dateText}</div>
-            <div className="pulse-clock">{clockText}</div>
+          <div className="pulse-header-alt-right">
+            <div className="pulse-date-alt">{dateText}</div>
+            <div className="pulse-clock-alt">{clockText}</div>
           </div>
         </header>
 
-        <section className="pulse-kpi-grid">
-          <div className="pulse-kpi-card pulse-kpi-card-cyan">
-            <div className="pulse-kpi-label">TODAY REVENUE</div>
-            <div className="pulse-kpi-value">{formatMoney(todayRevenue)}</div>
-            <div className="pulse-kpi-sub">დღის შემოსავალი</div>
+        <section className="pulse-kpis-alt">
+          <div className="pulse-kpi-alt">
+            <div className="pulse-kpi-alt-top">
+              <div className="pulse-kpi-alt-label">Order Revenue</div>
+              <div className="pulse-kpi-spark pulse-kpi-spark-green" />
+            </div>
+            <div className="pulse-kpi-alt-value">{formatMoney(kpiStats.orderRevenue)}</div>
+            <div className="pulse-kpi-alt-change positive">
+              ↗ {monthComparison.revenuePct.toFixed(1)}%
+              <span> From last month</span>
+            </div>
           </div>
 
-          <div className="pulse-kpi-card pulse-kpi-card-purple">
-            <div className="pulse-kpi-label">TODAY ORDERS</div>
-            <div className="pulse-kpi-value">{todayOrders.toLocaleString()}</div>
-            <div className="pulse-kpi-sub">დღის შეკვეთები</div>
+          <div className="pulse-kpi-alt">
+            <div className="pulse-kpi-alt-top">
+              <div className="pulse-kpi-alt-label">Avg Order Value</div>
+              <div className="pulse-kpi-spark pulse-kpi-spark-yellow" />
+            </div>
+            <div className="pulse-kpi-alt-value">
+              {formatMoney(kpiStats.avgOrderValue)}
+            </div>
+            <div className="pulse-kpi-alt-change positive">
+              ↗ {monthComparison.aovPct.toFixed(1)}%
+              <span> From last month</span>
+            </div>
           </div>
 
-          <div className="pulse-kpi-card pulse-kpi-card-orange">
-            <div className="pulse-kpi-label">MONTH REVENUE</div>
-            <div className="pulse-kpi-value">{formatMoney(monthRevenue)}</div>
-            <div className="pulse-kpi-sub">თვის შემოსავალი</div>
+          <div className="pulse-kpi-alt">
+            <div className="pulse-kpi-alt-top">
+              <div className="pulse-kpi-alt-label">Total Orders</div>
+              <div className="pulse-kpi-spark pulse-kpi-spark-red" />
+            </div>
+            <div className="pulse-kpi-alt-value">
+              {kpiStats.totalOrders.toLocaleString()}
+            </div>
+            <div className={`pulse-kpi-alt-change ${monthComparison.ordersPct >= 0 ? "positive" : "negative"}`}>
+              {monthComparison.ordersPct >= 0 ? "↗" : "↘"}{" "}
+              {Math.abs(monthComparison.ordersPct).toFixed(1)}%
+              <span> From last month</span>
+            </div>
           </div>
 
-          <div className="pulse-kpi-card pulse-kpi-card-pink">
-            <div className="pulse-kpi-label">MONTH ORDERS</div>
-            <div className="pulse-kpi-value">{monthOrders.toLocaleString()}</div>
-            <div className="pulse-kpi-sub">თვის შეკვეთები</div>
+          <div className="pulse-kpi-alt">
+            <div className="pulse-kpi-alt-top">
+              <div className="pulse-kpi-alt-label">Month Revenue</div>
+              <div className="pulse-kpi-spark pulse-kpi-spark-cyan" />
+            </div>
+            <div className="pulse-kpi-alt-value">
+              {formatMoney(kpiStats.monthRevenue)}
+            </div>
+            <div className="pulse-kpi-alt-change positive">
+              ↗ {monthComparison.monthRevenuePct.toFixed(1)}%
+              <span> From last month</span>
+            </div>
           </div>
         </section>
 
-        <section className="pulse-main-grid">
-          <section className="pulse-orders-panel">
-            <div className="pulse-panel-header">
-              <div className="pulse-panel-title-wrap">
-                <div className="pulse-panel-icon">📋</div>
-                <div>
-                  <div className="pulse-panel-title">Live Orders</div>
-                  <div className="pulse-panel-subtitle">Real-time feed across all stores</div>
-                </div>
-              </div>
+        {loadError && <div className="pulse-error-alt">{loadError}</div>}
 
-              <div className="pulse-panel-badge">25 recent</div>
+        <section className="pulse-upper-grid-alt">
+          <section className="pulse-chart-card-alt">
+            <div className="pulse-card-head-alt">
+              <div className="pulse-card-title-alt">Hourly Revenue</div>
+              <div className="pulse-card-meta-alt">Today · 07:00–22:00</div>
             </div>
 
-            {loadError && <div className="pulse-error">{loadError}</div>}
-
-            <div className="pulse-orders-table">
-              <div className="pulse-orders-head">
-                <div>Store</div>
-                <div>Order ID</div>
-                <div>Items</div>
-                <div>Amount</div>
-                <div>Time</div>
+            <div className="pulse-chart-wrap-alt">
+              <div className="pulse-chart-grid-alt">
+                {[1500, 1200, 855, 511, 168].map((label) => (
+                  <div className="pulse-chart-grid-row-alt" key={label}>
+                    <span>{label >= 1000 ? `${(label / 1000).toFixed(1)}k` : label}</span>
+                  </div>
+                ))}
               </div>
 
-              <div className="pulse-orders-body">
-                {orders.length === 0 ? (
-                  <div className="pulse-empty">No orders loaded yet.</div>
-                ) : (
-                  orders.map((order) => (
-                    <div className="pulse-order-row" key={order.uid}>
-                      <div className={`pulse-store pulse-store-${order.storeKey}`}>
-                        <span className="pulse-store-dot" />
-                        <span>{order.storeLabel}</span>
-                      </div>
+              <svg className="pulse-chart-svg-alt" viewBox="0 0 760 280" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="lineGlow" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#1bd8ff" />
+                    <stop offset="100%" stopColor="#2ee6ff" />
+                  </linearGradient>
+                  <linearGradient id="areaGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgba(46,230,255,0.28)" />
+                    <stop offset="100%" stopColor="rgba(46,230,255,0.02)" />
+                  </linearGradient>
+                </defs>
 
-                      <div className="pulse-order-number">
-                        {order.orderNumber ? `#${order.orderNumber}` : "-"}
-                      </div>
-
-                      <div className="pulse-items-text">{order.itemsText}</div>
-
-                      <div className="pulse-amount">{formatMoney(order.amount)}</div>
-
-                      <div className="pulse-time">
-                        {order.createdAt
-                          ? new Date(order.createdAt).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                              hour12: true,
-                            })
-                          : "-"}
-                      </div>
-                    </div>
-                  ))
+                {chartPath && (
+                  <>
+                    <path
+                      d={`${chartPath} L 746 266 L 14 266 Z`}
+                      fill="rgba(46,230,255,0.10)"
+                    />
+                    <path
+                      d={chartPath}
+                      fill="none"
+                      stroke="url(#lineGlow)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    {hourlyData.map((point, index) => {
+                      const max = Math.max(...chartValues, 1);
+                      const x = 14 + (index * (760 - 28)) / Math.max(hourlyData.length - 1, 1);
+                      const y = 280 - 14 - (point.value / max) * (280 - 28);
+                      const isPeak = point.value === max;
+                      return isPeak ? (
+                        <g key={point.hour}>
+                          <circle cx={x} cy={y} r="8" fill="#0c1724" stroke="#2ee6ff" strokeWidth="4" />
+                        </g>
+                      ) : null;
+                    })}
+                  </>
                 )}
+              </svg>
+
+              <div className="pulse-chart-total-alt">
+                <div>Total</div>
+                <strong>{formatMoney(hourlyTotal)}</strong>
               </div>
+            </div>
+
+            <div className="pulse-chart-hours-alt">
+              {hourlyData.map((point) => (
+                <span key={point.hour}>{point.hour}:00</span>
+              ))}
             </div>
           </section>
 
-          <aside className="pulse-side-panel">
-            <div className="pulse-side-card">
-              <div className="pulse-side-title">Store Performance</div>
+          <aside className="pulse-share-card-alt">
+            <div className="pulse-card-head-alt">
+              <div className="pulse-card-title-alt">Store Share</div>
+              <div className="pulse-card-meta-alt">Today</div>
+            </div>
 
-              <div className="pulse-store-rank pulse-rank-vending">
-                <div className="pulse-rank-left">
-                  <div className="pulse-rank-icon pulse-rank-icon-vending">☕</div>
-                  <div>
-                    <div className="pulse-rank-name">Meama Vending</div>
-                    <div className="pulse-rank-meta">Live active store feed</div>
+            <div className="pulse-share-content-alt">
+              <div className="pulse-donut-wrap-alt">
+                <div
+                  className="pulse-donut-alt"
+                  style={{ backgroundImage: donutGradient }}
+                >
+                  <div className="pulse-donut-inner-alt">
+                    <span>Total</span>
+                    <strong>{formatMoney(storeShare.totalRevenue)}</strong>
                   </div>
                 </div>
-                <div className="pulse-rank-amount">●</div>
               </div>
 
-              <div className="pulse-store-rank pulse-rank-georgia">
-                <div className="pulse-rank-left">
-                  <div className="pulse-rank-icon pulse-rank-icon-georgia">🏪</div>
-                  <div>
-                    <div className="pulse-rank-name">Meama Georgia</div>
-                    <div className="pulse-rank-meta">Live active store feed</div>
+              <div className="pulse-share-legend-alt">
+                {storeShare.rows.map((row) => (
+                  <div className="pulse-share-row-alt" key={row.key}>
+                    <div className="pulse-share-left-alt">
+                      <span
+                        className="pulse-share-dot-alt"
+                        style={{ background: row.color }}
+                      />
+                      <span>{row.shortLabel}</span>
+                    </div>
+                    <div className="pulse-share-right-alt">
+                      <span>{formatMoney(row.revenue)}</span>
+                      <strong>{row.percent.toFixed(1)}%</strong>
+                    </div>
                   </div>
-                </div>
-                <div className="pulse-rank-amount">●</div>
-              </div>
-
-              <div className="pulse-store-rank pulse-rank-collect">
-                <div className="pulse-rank-left">
-                  <div className="pulse-rank-icon pulse-rank-icon-collect">📦</div>
-                  <div>
-                    <div className="pulse-rank-name">Meama Collect</div>
-                    <div className="pulse-rank-meta">Live active store feed</div>
-                  </div>
-                </div>
-                <div className="pulse-rank-amount">●</div>
-              </div>
-
-              <div className="pulse-store-rank pulse-rank-b2b">
-                <div className="pulse-rank-left">
-                  <div className="pulse-rank-icon pulse-rank-icon-b2b">🏢</div>
-                  <div>
-                    <div className="pulse-rank-name">MEAMA B2B</div>
-                    <div className="pulse-rank-meta">Live active store feed</div>
-                  </div>
-                </div>
-                <div className="pulse-rank-amount">●</div>
-              </div>
-
-              <div className="pulse-store-rank pulse-rank-franchise">
-                <div className="pulse-rank-left">
-                  <div className="pulse-rank-icon pulse-rank-icon-franchise">🔑</div>
-                  <div>
-                    <div className="pulse-rank-name">Meama Franchise</div>
-                    <div className="pulse-rank-meta">Live active store feed</div>
-                  </div>
-                </div>
-                <div className="pulse-rank-amount">●</div>
+                ))}
               </div>
             </div>
           </aside>
+        </section>
+
+        <section className="pulse-orders-card-alt">
+          <div className="pulse-orders-headbar-alt">
+            <div className="pulse-card-title-alt">Order List</div>
+
+            <div className="pulse-filters-alt">
+              {["all", "vending", "georgia", "collect", "b2b", "franchise"].map((filter) => (
+                <button
+                  key={filter}
+                  className={`pulse-filter-btn-alt ${activeFilter === filter ? "active" : ""}`}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter === "all"
+                    ? "All"
+                    : STORE_CONFIGS.find((s) => s.key === filter)?.shortLabel ?? filter}
+                </button>
+              ))}
+              <span className="pulse-count-alt">{filteredOrders.length} orders</span>
+            </div>
+          </div>
+
+          <div className="pulse-order-table-alt">
+            <div className="pulse-order-table-head-alt">
+              <div># Order ID</div>
+              <div>Store</div>
+              <div>Items</div>
+              <div>Qty</div>
+              <div>Total</div>
+              <div>Payment</div>
+              <div>Fulfilment</div>
+            </div>
+
+            <div className="pulse-order-table-body-alt">
+              {filteredOrders.map((order) => {
+                const payment = normalizePaymentStatus(order.paymentStatus);
+                const fulfillment = normalizeFulfillmentStatus(order.fulfillmentStatus);
+
+                return (
+                  <div className="pulse-order-table-row-alt" key={order.uid}>
+                    <div className="order-id-alt">{order.orderNumber}</div>
+
+                    <div className="order-store-alt">
+                      <span
+                        className="order-store-dot-alt"
+                        style={{ background: getStoreColor(order.storeKey) }}
+                      />
+                      {order.shortStoreLabel}
+                    </div>
+
+                    <div className="order-items-alt">{order.itemsText}</div>
+
+                    <div className="order-qty-alt">{order.qty}</div>
+
+                    <div className="order-total-alt">{formatMoney(order.amount)}</div>
+
+                    <div>
+                      <span
+                        className={`status-chip-alt ${
+                          payment === "Pending"
+                            ? "pending"
+                            : payment === "Failed"
+                            ? "failed"
+                            : "success"
+                        }`}
+                      >
+                        {payment}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span
+                        className={`status-chip-alt ${
+                          fulfillment === "Pending" ? "pending" : "fulfilled"
+                        }`}
+                      >
+                        {fulfillment}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
       </div>
     </main>
