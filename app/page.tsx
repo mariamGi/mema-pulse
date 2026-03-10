@@ -28,13 +28,6 @@ type LiveOrder = {
   fulfillmentStatus: string;
 };
 
-type KPIStats = {
-  orderRevenue: number;
-  avgOrderValue: number;
-  totalOrders: number;
-  monthRevenue: number;
-};
-
 const STORE_CONFIGS: StoreConfig[] = [
   {
     key: "vending",
@@ -72,6 +65,9 @@ const STORE_CONFIGS: StoreConfig[] = [
     color: "#9d82ff",
   },
 ];
+
+const DASHBOARD_BASE_WIDTH = 1920;
+const DASHBOARD_BASE_HEIGHT = 1080;
 
 function pickFirst(row: RawRow, keys: string[], fallback: any = null) {
   for (const key of keys) {
@@ -155,14 +151,7 @@ function toItemsText(row: RawRow) {
 function toQty(row: RawRow) {
   const raw = pickFirst(
     row,
-    [
-      "total_quantity",
-      "quantity",
-      "qty",
-      "item_count",
-      "line_items_count",
-      "capsules_qty",
-    ],
+    ["total_quantity", "quantity", "qty", "item_count", "line_items_count"],
     1
   );
   const value = Number(raw);
@@ -275,10 +264,10 @@ function normalizeFulfillmentStatus(status: string) {
   return "Fulfilled";
 }
 
-function buildChartPath(values: number[], width: number, height: number, padding = 14) {
+function buildChartPath(values: number[], width: number, height: number, padding = 18) {
   if (!values.length) return "";
   const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
+  const min = 0;
   const span = Math.max(max - min, 1);
 
   return values
@@ -298,8 +287,21 @@ export default function MemaPulsePage() {
   const [now, setNow] = useState(new Date());
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [scale, setScale] = useState(1);
 
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const updateScale = () => {
+      const widthScale = window.innerWidth / DASHBOARD_BASE_WIDTH;
+      const heightScale = window.innerHeight / DASHBOARD_BASE_HEIGHT;
+      setScale(Math.min(widthScale, heightScale));
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -317,6 +319,7 @@ export default function MemaPulsePage() {
           { event: "INSERT", schema: "public", table: store.table },
           (payload) => {
             const liveOrder = normalizeOrder(payload.new as RawRow, store);
+
             setOrders((prev) =>
               [liveOrder, ...prev].sort(
                 (a, b) =>
@@ -381,19 +384,14 @@ export default function MemaPulsePage() {
     return orders.filter((order) => isSameMonth(order.createdAt, now));
   }, [orders, now]);
 
-  const kpiStats: KPIStats = useMemo(() => {
-    const orderRevenue = todayOrdersData.reduce((sum, order) => sum + order.amount, 0);
-    const totalOrders = todayOrdersData.length;
-    const avgOrderValue = totalOrders ? orderRevenue / totalOrders : 0;
-    const monthRevenue = monthOrdersData.reduce((sum, order) => sum + order.amount, 0);
+  const orderRevenue = useMemo(
+    () => todayOrdersData.reduce((sum, order) => sum + order.amount, 0),
+    [todayOrdersData]
+  );
 
-    return {
-      orderRevenue,
-      avgOrderValue,
-      totalOrders,
-      monthRevenue,
-    };
-  }, [todayOrdersData, monthOrdersData]);
+  const totalOrders = todayOrdersData.length;
+  const avgOrderValue = totalOrders ? orderRevenue / totalOrders : 0;
+  const monthRevenue = monthOrdersData.reduce((sum, order) => sum + order.amount, 0);
 
   const monthComparison = useMemo(() => {
     const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -408,12 +406,12 @@ export default function MemaPulsePage() {
     }
 
     return {
-      revenuePct: pct(kpiStats.orderRevenue, prevRevenue),
-      aovPct: pct(kpiStats.avgOrderValue, prevAov),
-      ordersPct: pct(kpiStats.totalOrders, prevTotal),
-      monthRevenuePct: pct(kpiStats.monthRevenue, prevRevenue),
+      revenuePct: pct(orderRevenue, prevRevenue),
+      aovPct: pct(avgOrderValue, prevAov),
+      ordersPct: pct(totalOrders, prevTotal),
+      monthRevenuePct: pct(monthRevenue, prevRevenue),
     };
-  }, [orders, now, kpiStats]);
+  }, [orders, now, orderRevenue, avgOrderValue, totalOrders, monthRevenue]);
 
   const hourlyData = useMemo(() => {
     const startHour = 7;
@@ -432,7 +430,7 @@ export default function MemaPulsePage() {
   }, [todayOrdersData]);
 
   const chartValues = hourlyData.map((p) => p.value);
-  const chartPath = buildChartPath(chartValues, 760, 280);
+  const chartPath = buildChartPath(chartValues, 1120, 320);
   const hourlyTotal = chartValues.reduce((a, b) => a + b, 0);
 
   const storeShare = useMemo(() => {
@@ -495,305 +493,297 @@ export default function MemaPulsePage() {
   );
 
   return (
-    <main className="pulse-page pulse-page-alt">
-      <div className="pulse-bg-orb pulse-bg-orb-1" />
-      <div className="pulse-bg-orb pulse-bg-orb-2" />
-      <div className="pulse-bg-orb pulse-bg-orb-3" />
+    <main className="dashboard-page pulse-page-alt">
+      <div className="dashboard-viewport">
+        <div
+          className="dashboard-shell pulse-shell-alt"
+          style={{
+            width: DASHBOARD_BASE_WIDTH,
+            height: DASHBOARD_BASE_HEIGHT,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          <div className="pulse-bg-orb pulse-bg-orb-1" />
+          <div className="pulse-bg-orb pulse-bg-orb-2" />
+          <div className="pulse-bg-orb pulse-bg-orb-3" />
 
-      <div className="pulse-shell-alt">
-        {toastOrder && (
-          <div className="pulse-toast-alt">
-            <div
-              className="pulse-toast-alt-accent"
-              style={{ background: getStoreColor(toastOrder.storeKey) }}
-            />
-            <div className="pulse-toast-alt-icon">
-              {getStoreIcon(toastOrder.storeKey)}
-            </div>
-
-            <div className="pulse-toast-alt-content">
-              <div className="pulse-toast-alt-title">
-                New Order #{toastOrder.orderNumber}
-              </div>
-              <div className="pulse-toast-alt-subtitle">
-                {toastOrder.storeLabel} — {toastOrder.itemsText}
-              </div>
-            </div>
-
-            <div className="pulse-toast-alt-amount">{formatMoney(toastOrder.amount)}</div>
-          </div>
-        )}
-
-        <header className="pulse-header-alt">
-          <div className="pulse-header-alt-left">
-            <div className="pulse-brand-alt">MEMA</div>
-            <div className="pulse-divider-alt" />
-            <div className="pulse-subbrand-alt">Live Operations</div>
-
-            <div className="pulse-live-pill-alt">
-              <span className="pulse-live-pill-dot-alt" />
-              LIVE
-            </div>
-          </div>
-
-          <div className="pulse-header-alt-right">
-            <div className="pulse-date-alt">{dateText}</div>
-            <div className="pulse-clock-alt">{clockText}</div>
-          </div>
-        </header>
-
-        <section className="pulse-kpis-alt">
-          <div className="pulse-kpi-alt">
-            <div className="pulse-kpi-alt-top">
-              <div className="pulse-kpi-alt-label">Order Revenue</div>
-              <div className="pulse-kpi-spark pulse-kpi-spark-green" />
-            </div>
-            <div className="pulse-kpi-alt-value">{formatMoney(kpiStats.orderRevenue)}</div>
-            <div className="pulse-kpi-alt-change positive">
-              ↗ {monthComparison.revenuePct.toFixed(1)}%
-              <span> From last month</span>
-            </div>
-          </div>
-
-          <div className="pulse-kpi-alt">
-            <div className="pulse-kpi-alt-top">
-              <div className="pulse-kpi-alt-label">Avg Order Value</div>
-              <div className="pulse-kpi-spark pulse-kpi-spark-yellow" />
-            </div>
-            <div className="pulse-kpi-alt-value">
-              {formatMoney(kpiStats.avgOrderValue)}
-            </div>
-            <div className="pulse-kpi-alt-change positive">
-              ↗ {monthComparison.aovPct.toFixed(1)}%
-              <span> From last month</span>
-            </div>
-          </div>
-
-          <div className="pulse-kpi-alt">
-            <div className="pulse-kpi-alt-top">
-              <div className="pulse-kpi-alt-label">Total Orders</div>
-              <div className="pulse-kpi-spark pulse-kpi-spark-red" />
-            </div>
-            <div className="pulse-kpi-alt-value">
-              {kpiStats.totalOrders.toLocaleString()}
-            </div>
-            <div className={`pulse-kpi-alt-change ${monthComparison.ordersPct >= 0 ? "positive" : "negative"}`}>
-              {monthComparison.ordersPct >= 0 ? "↗" : "↘"}{" "}
-              {Math.abs(monthComparison.ordersPct).toFixed(1)}%
-              <span> From last month</span>
-            </div>
-          </div>
-
-          <div className="pulse-kpi-alt">
-            <div className="pulse-kpi-alt-top">
-              <div className="pulse-kpi-alt-label">Month Revenue</div>
-              <div className="pulse-kpi-spark pulse-kpi-spark-cyan" />
-            </div>
-            <div className="pulse-kpi-alt-value">
-              {formatMoney(kpiStats.monthRevenue)}
-            </div>
-            <div className="pulse-kpi-alt-change positive">
-              ↗ {monthComparison.monthRevenuePct.toFixed(1)}%
-              <span> From last month</span>
-            </div>
-          </div>
-        </section>
-
-        {loadError && <div className="pulse-error-alt">{loadError}</div>}
-
-        <section className="pulse-upper-grid-alt">
-          <section className="pulse-chart-card-alt">
-            <div className="pulse-card-head-alt">
-              <div className="pulse-card-title-alt">Hourly Revenue</div>
-              <div className="pulse-card-meta-alt">Today · 07:00–22:00</div>
-            </div>
-
-            <div className="pulse-chart-wrap-alt">
-              <div className="pulse-chart-grid-alt">
-                {[1500, 1200, 855, 511, 168].map((label) => (
-                  <div className="pulse-chart-grid-row-alt" key={label}>
-                    <span>{label >= 1000 ? `${(label / 1000).toFixed(1)}k` : label}</span>
-                  </div>
-                ))}
+          {toastOrder && (
+            <div className="pulse-toast-alt">
+              <div
+                className="pulse-toast-alt-accent"
+                style={{ background: getStoreColor(toastOrder.storeKey) }}
+              />
+              <div className="pulse-toast-alt-icon">
+                {getStoreIcon(toastOrder.storeKey)}
               </div>
 
-              <svg className="pulse-chart-svg-alt" viewBox="0 0 760 280" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="lineGlow" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#1bd8ff" />
-                    <stop offset="100%" stopColor="#2ee6ff" />
-                  </linearGradient>
-                  <linearGradient id="areaGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="rgba(46,230,255,0.28)" />
-                    <stop offset="100%" stopColor="rgba(46,230,255,0.02)" />
-                  </linearGradient>
-                </defs>
-
-                {chartPath && (
-                  <>
-                    <path
-                      d={`${chartPath} L 746 266 L 14 266 Z`}
-                      fill="rgba(46,230,255,0.10)"
-                    />
-                    <path
-                      d={chartPath}
-                      fill="none"
-                      stroke="url(#lineGlow)"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    {hourlyData.map((point, index) => {
-                      const max = Math.max(...chartValues, 1);
-                      const x = 14 + (index * (760 - 28)) / Math.max(hourlyData.length - 1, 1);
-                      const y = 280 - 14 - (point.value / max) * (280 - 28);
-                      const isPeak = point.value === max;
-                      return isPeak ? (
-                        <g key={point.hour}>
-                          <circle cx={x} cy={y} r="8" fill="#0c1724" stroke="#2ee6ff" strokeWidth="4" />
-                        </g>
-                      ) : null;
-                    })}
-                  </>
-                )}
-              </svg>
-
-              <div className="pulse-chart-total-alt">
-                <div>Total</div>
-                <strong>{formatMoney(hourlyTotal)}</strong>
-              </div>
-            </div>
-
-            <div className="pulse-chart-hours-alt">
-              {hourlyData.map((point) => (
-                <span key={point.hour}>{point.hour}:00</span>
-              ))}
-            </div>
-          </section>
-
-          <aside className="pulse-share-card-alt">
-            <div className="pulse-card-head-alt">
-              <div className="pulse-card-title-alt">Store Share</div>
-              <div className="pulse-card-meta-alt">Today</div>
-            </div>
-
-            <div className="pulse-share-content-alt">
-              <div className="pulse-donut-wrap-alt">
-                <div
-                  className="pulse-donut-alt"
-                  style={{ backgroundImage: donutGradient }}
-                >
-                  <div className="pulse-donut-inner-alt">
-                    <span>Total</span>
-                    <strong>{formatMoney(storeShare.totalRevenue)}</strong>
-                  </div>
+              <div className="pulse-toast-alt-content">
+                <div className="pulse-toast-alt-title">
+                  New Order #{toastOrder.orderNumber}
+                </div>
+                <div className="pulse-toast-alt-subtitle">
+                  {toastOrder.storeLabel} — {toastOrder.itemsText}
                 </div>
               </div>
 
-              <div className="pulse-share-legend-alt">
-                {storeShare.rows.map((row) => (
-                  <div className="pulse-share-row-alt" key={row.key}>
-                    <div className="pulse-share-left-alt">
-                      <span
-                        className="pulse-share-dot-alt"
-                        style={{ background: row.color }}
-                      />
-                      <span>{row.shortLabel}</span>
-                    </div>
-                    <div className="pulse-share-right-alt">
-                      <span>{formatMoney(row.revenue)}</span>
-                      <strong>{row.percent.toFixed(1)}%</strong>
-                    </div>
-                  </div>
-                ))}
+              <div className="pulse-toast-alt-amount">{formatMoney(toastOrder.amount)}</div>
+            </div>
+          )}
+
+          <header className="pulse-header-alt">
+            <div className="pulse-header-alt-left">
+              <div className="pulse-brand-alt">MEMA</div>
+              <div className="pulse-divider-alt" />
+              <div className="pulse-subbrand-alt">Live Operations</div>
+
+              <div className="pulse-live-pill-alt">
+                <span className="pulse-live-pill-dot-alt" />
+                LIVE
               </div>
             </div>
-          </aside>
-        </section>
 
-        <section className="pulse-orders-card-alt">
-          <div className="pulse-orders-headbar-alt">
-            <div className="pulse-card-title-alt">Order List</div>
-
-            <div className="pulse-filters-alt">
-              {["all", "vending", "georgia", "collect", "b2b", "franchise"].map((filter) => (
-                <button
-                  key={filter}
-                  className={`pulse-filter-btn-alt ${activeFilter === filter ? "active" : ""}`}
-                  onClick={() => setActiveFilter(filter)}
-                >
-                  {filter === "all"
-                    ? "All"
-                    : STORE_CONFIGS.find((s) => s.key === filter)?.shortLabel ?? filter}
-                </button>
-              ))}
-              <span className="pulse-count-alt">{filteredOrders.length} orders</span>
+            <div className="pulse-header-alt-right">
+              <div className="pulse-date-alt">{dateText}</div>
+              <div className="pulse-clock-alt">{clockText}</div>
             </div>
-          </div>
+          </header>
 
-          <div className="pulse-order-table-alt">
-            <div className="pulse-order-table-head-alt">
-              <div># Order ID</div>
-              <div>Store</div>
-              <div>Items</div>
-              <div>Qty</div>
-              <div>Total</div>
-              <div>Payment</div>
-              <div>Fulfilment</div>
+          <section className="pulse-kpis-alt">
+            <div className="pulse-kpi-alt">
+              <div className="pulse-kpi-alt-top">
+                <div className="pulse-kpi-alt-label">Order Revenue</div>
+                <div className="pulse-kpi-spark pulse-kpi-spark-green" />
+              </div>
+              <div className="pulse-kpi-alt-value">{formatMoney(orderRevenue)}</div>
+              <div className={`pulse-kpi-alt-change ${monthComparison.revenuePct >= 0 ? "positive" : "negative"}`}>
+                {monthComparison.revenuePct >= 0 ? "↗" : "↘"} {Math.abs(monthComparison.revenuePct).toFixed(1)}%
+                <span> From last month</span>
+              </div>
             </div>
 
-            <div className="pulse-order-table-body-alt">
-              {filteredOrders.map((order) => {
-                const payment = normalizePaymentStatus(order.paymentStatus);
-                const fulfillment = normalizeFulfillmentStatus(order.fulfillmentStatus);
+            <div className="pulse-kpi-alt">
+              <div className="pulse-kpi-alt-top">
+                <div className="pulse-kpi-alt-label">Avg Order Value</div>
+                <div className="pulse-kpi-spark pulse-kpi-spark-yellow" />
+              </div>
+              <div className="pulse-kpi-alt-value">{formatMoney(avgOrderValue)}</div>
+              <div className={`pulse-kpi-alt-change ${monthComparison.aovPct >= 0 ? "positive" : "negative"}`}>
+                {monthComparison.aovPct >= 0 ? "↗" : "↘"} {Math.abs(monthComparison.aovPct).toFixed(1)}%
+                <span> From last month</span>
+              </div>
+            </div>
 
-                return (
-                  <div className="pulse-order-table-row-alt" key={order.uid}>
-                    <div className="order-id-alt">{order.orderNumber}</div>
+            <div className="pulse-kpi-alt">
+              <div className="pulse-kpi-alt-top">
+                <div className="pulse-kpi-alt-label">Total Orders</div>
+                <div className="pulse-kpi-spark pulse-kpi-spark-red" />
+              </div>
+              <div className="pulse-kpi-alt-value">{totalOrders.toLocaleString()}</div>
+              <div className={`pulse-kpi-alt-change ${monthComparison.ordersPct >= 0 ? "positive" : "negative"}`}>
+                {monthComparison.ordersPct >= 0 ? "↗" : "↘"} {Math.abs(monthComparison.ordersPct).toFixed(1)}%
+                <span> From last month</span>
+              </div>
+            </div>
 
-                    <div className="order-store-alt">
-                      <span
-                        className="order-store-dot-alt"
-                        style={{ background: getStoreColor(order.storeKey) }}
+            <div className="pulse-kpi-alt">
+              <div className="pulse-kpi-alt-top">
+                <div className="pulse-kpi-alt-label">Month Revenue</div>
+                <div className="pulse-kpi-spark pulse-kpi-spark-cyan" />
+              </div>
+              <div className="pulse-kpi-alt-value">{formatMoney(monthRevenue)}</div>
+              <div className={`pulse-kpi-alt-change ${monthComparison.monthRevenuePct >= 0 ? "positive" : "negative"}`}>
+                {monthComparison.monthRevenuePct >= 0 ? "↗" : "↘"} {Math.abs(monthComparison.monthRevenuePct).toFixed(1)}%
+                <span> From last month</span>
+              </div>
+            </div>
+          </section>
+
+          {loadError && <div className="pulse-error-alt">{loadError}</div>}
+
+          <section className="pulse-upper-grid-alt">
+            <section className="pulse-chart-card-alt">
+              <div className="pulse-card-head-alt">
+                <div className="pulse-card-title-alt">Hourly Revenue</div>
+                <div className="pulse-card-meta-alt">Today · 07:00–22:00</div>
+              </div>
+
+              <div className="pulse-chart-wrap-alt">
+                <div className="pulse-chart-grid-alt">
+                  {[1500, 1200, 855, 511, 168].map((label) => (
+                    <div className="pulse-chart-grid-row-alt" key={label}>
+                      <span>{label >= 1000 ? `${(label / 1000).toFixed(1)}k` : label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <svg className="pulse-chart-svg-alt" viewBox="0 0 1120 320" preserveAspectRatio="none">
+                  {chartPath && (
+                    <>
+                      <path
+                        d={`${chartPath} L 1102 302 L 18 302 Z`}
+                        fill="rgba(46,230,255,0.10)"
                       />
-                      {order.shortStoreLabel}
-                    </div>
+                      <path
+                        d={chartPath}
+                        fill="none"
+                        stroke="#2ee6ff"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      {hourlyData.map((point, index) => {
+                        const max = Math.max(...chartValues, 1);
+                        const x = 18 + (index * (1120 - 36)) / Math.max(hourlyData.length - 1, 1);
+                        const y = 320 - 18 - (point.value / max) * (320 - 36);
+                        const isPeak = point.value === max && point.value > 0;
+                        return isPeak ? (
+                          <g key={point.hour}>
+                            <circle cx={x} cy={y} r="8" fill="#0c1724" stroke="#2ee6ff" strokeWidth="4" />
+                          </g>
+                        ) : null;
+                      })}
+                    </>
+                  )}
+                </svg>
 
-                    <div className="order-items-alt">{order.itemsText}</div>
+                <div className="pulse-chart-total-alt">
+                  <div>Total</div>
+                  <strong>{formatMoney(hourlyTotal)}</strong>
+                </div>
+              </div>
 
-                    <div className="order-qty-alt">{order.qty}</div>
+              <div className="pulse-chart-hours-alt">
+                {hourlyData.map((point) => (
+                  <span key={point.hour}>{point.hour}:00</span>
+                ))}
+              </div>
+            </section>
 
-                    <div className="order-total-alt">{formatMoney(order.amount)}</div>
+            <aside className="pulse-share-card-alt">
+              <div className="pulse-card-head-alt">
+                <div className="pulse-card-title-alt">Store Share</div>
+                <div className="pulse-card-meta-alt">Today</div>
+              </div>
 
-                    <div>
-                      <span
-                        className={`status-chip-alt ${
-                          payment === "Pending"
-                            ? "pending"
-                            : payment === "Failed"
-                            ? "failed"
-                            : "success"
-                        }`}
-                      >
-                        {payment}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span
-                        className={`status-chip-alt ${
-                          fulfillment === "Pending" ? "pending" : "fulfilled"
-                        }`}
-                      >
-                        {fulfillment}
-                      </span>
+              <div className="pulse-share-content-alt">
+                <div className="pulse-donut-wrap-alt">
+                  <div
+                    className="pulse-donut-alt"
+                    style={{ backgroundImage: donutGradient }}
+                  >
+                    <div className="pulse-donut-inner-alt">
+                      <span>Total</span>
+                      <strong>{formatMoney(storeShare.totalRevenue)}</strong>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="pulse-share-legend-alt">
+                  {storeShare.rows.map((row) => (
+                    <div className="pulse-share-row-alt" key={row.key}>
+                      <div className="pulse-share-left-alt">
+                        <span
+                          className="pulse-share-dot-alt"
+                          style={{ background: row.color }}
+                        />
+                        <span>{row.shortLabel}</span>
+                      </div>
+                      <div className="pulse-share-right-alt">
+                        <span>{formatMoney(row.revenue)}</span>
+                        <strong>{row.percent.toFixed(1)}%</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </section>
+
+          <section className="pulse-orders-card-alt">
+            <div className="pulse-orders-headbar-alt">
+              <div className="pulse-card-title-alt">Order List</div>
+
+              <div className="pulse-filters-alt">
+                {["all", "vending", "georgia", "collect", "b2b", "franchise"].map((filter) => (
+                  <button
+                    key={filter}
+                    className={`pulse-filter-btn-alt ${activeFilter === filter ? "active" : ""}`}
+                    onClick={() => setActiveFilter(filter)}
+                  >
+                    {filter === "all"
+                      ? "All"
+                      : STORE_CONFIGS.find((s) => s.key === filter)?.shortLabel ?? filter}
+                  </button>
+                ))}
+                <span className="pulse-count-alt">{filteredOrders.length} orders</span>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="pulse-order-table-alt">
+              <div className="pulse-order-table-head-alt">
+                <div># Order ID</div>
+                <div>Store</div>
+                <div>Items</div>
+                <div>Qty</div>
+                <div>Total</div>
+                <div>Payment</div>
+                <div>Fulfilment</div>
+              </div>
+
+              <div className="pulse-order-table-body-alt">
+                {filteredOrders.map((order) => {
+                  const payment = normalizePaymentStatus(order.paymentStatus);
+                  const fulfillment = normalizeFulfillmentStatus(order.fulfillmentStatus);
+
+                  return (
+                    <div className="pulse-order-table-row-alt" key={order.uid}>
+                      <div className="order-id-alt">{order.orderNumber}</div>
+
+                      <div className="order-store-alt">
+                        <span
+                          className="order-store-dot-alt"
+                          style={{ background: getStoreColor(order.storeKey) }}
+                        />
+                        {order.shortStoreLabel}
+                      </div>
+
+                      <div className="order-items-alt">{order.itemsText}</div>
+
+                      <div className="order-qty-alt">{order.qty}</div>
+
+                      <div className="order-total-alt">{formatMoney(order.amount)}</div>
+
+                      <div>
+                        <span
+                          className={`status-chip-alt ${
+                            payment === "Pending"
+                              ? "pending"
+                              : payment === "Failed"
+                              ? "failed"
+                              : "success"
+                          }`}
+                        >
+                          {payment}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span
+                          className={`status-chip-alt ${
+                            fulfillment === "Pending" ? "pending" : "fulfilled"
+                          }`}
+                        >
+                          {fulfillment}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );

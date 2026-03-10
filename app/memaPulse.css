@@ -1,9 +1,8 @@
 :root {
   --bg: #07111d;
-  --bg-2: #0a1828;
+  --bg-2: #08131f;
   --panel: #0c1724;
   --panel-2: #0e1d2d;
-  --panel-3: #0a1623;
   --stroke: rgba(120, 160, 210, 0.12);
   --stroke-2: rgba(255, 255, 255, 0.06);
   --text: #f5fbff;
@@ -12,7 +11,6 @@
   --cyan: #2ee6ff;
   --green: #26e6a6;
   --yellow: #ffbf3c;
-  --orange: #ff9f2f;
   --pink: #ff66c9;
   --purple: #9d82ff;
   --red: #ff6b6b;
@@ -30,10 +28,7 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 15% -10%, rgba(33, 205, 255, 0.08), transparent 20%),
-    radial-gradient(circle at 90% 0%, rgba(0, 255, 180, 0.05), transparent 18%),
-    linear-gradient(180deg, #07111d 0%, #08131f 55%, #07111d 100%);
+  background: linear-gradient(180deg, #07111d 0%, #08131f 100%);
   color: var(--text);
   font-family: Inter, Arial, Helvetica, sans-serif;
 }
@@ -42,15 +37,32 @@ body {
   letter-spacing: -0.01em;
 }
 
-.pulse-page-alt {
+.dashboard-page {
   width: 100vw;
   height: 100vh;
-  position: relative;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.05), transparent 20%),
-    radial-gradient(circle at 90% 10%, rgba(52, 211, 153, 0.05), transparent 18%),
-    linear-gradient(180deg, #07111d 0%, #08131f 100%);
+    radial-gradient(circle at 15% -10%, rgba(33, 205, 255, 0.08), transparent 20%),
+    radial-gradient(circle at 90% 0%, rgba(0, 255, 180, 0.05), transparent 18%),
+    linear-gradient(180deg, #07111d 0%, #08131f 55%, #07111d 100%);
+}
+
+.dashboard-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dashboard-shell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.pulse-page-alt {
+  position: relative;
 }
 
 .pulse-bg-orb {
@@ -88,20 +100,20 @@ body {
 .pulse-shell-alt {
   position: relative;
   z-index: 2;
-  width: 100%;
-  height: 100%;
-  padding: 18px 28px 18px;
+  padding: 18px 24px 18px;
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: 44px 128px 392px 1fr;
   gap: 14px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.05), transparent 20%),
+    radial-gradient(circle at 90% 10%, rgba(52, 211, 153, 0.05), transparent 18%),
+    linear-gradient(180deg, #07111d 0%, #08131f 100%);
 }
 
 .pulse-header-alt {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  min-height: 46px;
 }
 
 .pulse-header-alt-left {
@@ -163,7 +175,7 @@ body {
 }
 
 .pulse-clock-alt {
-  font-size: clamp(30px, 3vw, 42px);
+  font-size: 42px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -171,12 +183,12 @@ body {
 
 .pulse-kpis-alt {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
 }
 
 .pulse-kpi-alt {
-  min-height: 114px;
+  min-height: 128px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(12, 23, 36, 0.98), rgba(10, 22, 34, 0.98));
   border: 1px solid var(--stroke);
@@ -200,14 +212,14 @@ body {
 }
 
 .pulse-kpi-alt-value {
-  margin-top: 10px;
-  font-size: clamp(24px, 2.2vw, 38px);
+  margin-top: 16px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.05;
 }
 
 .pulse-kpi-alt-change {
-  margin-top: 12px;
+  margin-top: 14px;
   font-size: 14px;
   font-weight: 700;
 }
@@ -261,9 +273,9 @@ body {
 
 .pulse-upper-grid-alt {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(330px, 0.72fr);
+  grid-template-columns: 1.72fr 0.72fr;
   gap: 14px;
-  min-height: 292px;
+  min-height: 392px;
 }
 
 .pulse-chart-card-alt,
@@ -280,7 +292,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 10px;
-  min-height: 292px;
+  min-height: 392px;
 }
 
 .pulse-card-head-alt {
@@ -330,7 +342,7 @@ body {
 .pulse-chart-svg-alt {
   width: 100%;
   height: 100%;
-  min-height: 210px;
+  min-height: 274px;
   display: block;
 }
 
@@ -608,7 +620,7 @@ body {
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(620px, 74vw);
+  width: 620px;
   min-height: 82px;
   border-radius: 14px;
   background: rgba(12, 23, 36, 0.98);
@@ -664,25 +676,4 @@ body {
   font-size: 18px;
   font-weight: 800;
   padding-left: 10px;
-}
-
-@media (max-width: 1380px) {
-  .pulse-upper-grid-alt {
-    grid-template-columns: 1fr;
-  }
-
-  .pulse-share-content-alt {
-    grid-template-columns: 150px 1fr;
-  }
-}
-
-@media (max-width: 1200px) {
-  .pulse-kpis-alt {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pulse-order-table-head-alt,
-  .pulse-order-table-row-alt {
-    grid-template-columns: 1fr 1fr 2fr 0.6fr 0.9fr 0.9fr 1fr;
-  }
 }
