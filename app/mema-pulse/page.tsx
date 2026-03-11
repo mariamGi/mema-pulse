@@ -1,4 +1,5 @@
 "use client";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type StoreId = "vending" | "georgia" | "collect" | "b2b" | "franchise";
@@ -90,8 +91,8 @@ function formatMoney(value: number): string {
 const Sparkline = ({
   data,
   color,
-  w = 100,
-  h = 32,
+  w = 112,
+  h = 42,
 }: {
   data: number[];
   color: string;
@@ -114,7 +115,7 @@ const Sparkline = ({
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.26" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -123,7 +124,7 @@ const Sparkline = ({
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="1.7"
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -138,7 +139,6 @@ const genOrder = (id: number): Order => {
     name: pick(PRODUCTS),
     qty: rand(1, 5),
   }));
-
   const total = items.reduce((sum, item) => sum + item.qty * rand(5, 18), 0);
 
   return {
@@ -170,30 +170,24 @@ const Badge = ({
 }) => {
   const styles =
     type === "Success"
-      ? {
-          bg: "#075E45",
-          color: "#44E0A3",
-          border: "#0B7C5C",
-        }
-      : {
-          bg: "#5D3A08",
-          color: "#F3C256",
-          border: "#8B5E13",
-        };
+      ? { bg: "#085E46", color: "#44E0A3", border: "#0B7C5C" }
+      : { bg: "#5D3A08", color: "#F3C256", border: "#8B5E13" };
 
   return (
     <span
       style={{
-        display: "inline-block",
-        padding: "5px 12px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "6px 14px",
         borderRadius: 6,
         fontSize: 12,
         fontWeight: 700,
         background: styles.bg,
         color: styles.color,
         border: `1px solid ${styles.border}`,
-        minWidth: 82,
-        textAlign: "center",
+        minWidth: 92,
+        lineHeight: 1,
       }}
     >
       {text}
@@ -225,35 +219,35 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 16,
+        top: 6,
         left: "50%",
-        transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
+        transform: `translateX(-50%) translateY(${visible ? "0" : "-10px"})`,
         opacity: visible ? 1 : 0,
-        transition: "all 0.28s ease",
-        width: 640,
-        maxWidth: "calc(100vw - 32px)",
+        transition: "all 0.25s ease",
+        width: 570,
+        maxWidth: "calc(100vw - 40px)",
         background: "#161B22",
         border: "1px solid #21262D",
-        borderLeft: `4px solid ${order.store.color}`,
-        borderRadius: 8,
-        padding: "14px 18px",
+        borderLeft: `3px solid ${order.store.color}`,
+        borderRadius: 7,
+        padding: "12px 16px",
         zIndex: 999,
         display: "flex",
         alignItems: "center",
-        gap: 14,
-        boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
+        gap: 12,
+        boxShadow: "0 18px 50px rgba(0,0,0,0.36)",
       }}
     >
       <div
         style={{
-          width: 38,
-          height: 38,
+          width: 34,
+          height: 34,
           borderRadius: 8,
-          background: `${order.store.color}22`,
+          background: `${order.store.color}20`,
           display: "grid",
           placeItems: "center",
           color: order.store.color,
-          fontSize: 18,
+          fontSize: 16,
           flexShrink: 0,
         }}
       >
@@ -264,9 +258,9 @@ const NotificationToast = ({
         <div
           style={{
             color: "#F0F6FC",
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: 800,
-            letterSpacing: 0.4,
+            letterSpacing: 0.5,
             marginBottom: 4,
           }}
         >
@@ -277,14 +271,14 @@ const NotificationToast = ({
           style={{
             display: "flex",
             justifyContent: "space-between",
-            gap: 12,
             alignItems: "center",
+            gap: 10,
           }}
         >
           <span
             style={{
               color: "#F0F6FC",
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: 800,
               fontFamily: "monospace",
             }}
@@ -295,7 +289,7 @@ const NotificationToast = ({
           <span
             style={{
               color: "#F0F6FC",
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: 800,
               fontFamily: "monospace",
             }}
@@ -307,7 +301,7 @@ const NotificationToast = ({
         <div
           style={{
             color: "#8B949E",
-            fontSize: 12,
+            fontSize: 11,
             marginTop: 4,
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -361,7 +355,7 @@ export default function Dashboard() {
     const initialRegions: RegionStat[] = [
       { city: "Tbilisi", revenue: 12340 },
       { city: "Batumi", revenue: 7680 },
-      { city: "Kutaisi", revenue: 5410 },
+      { city: "Kutaisi", revenue: 5458 },
       { city: "Rustavi", revenue: 2910 },
     ];
 
@@ -377,12 +371,12 @@ export default function Dashboard() {
     setMtdOrders(12277);
 
     const seedOrders: Order[] = [];
-    for (let i = 0; i < 28; i += 1) {
+    for (let i = 0; i < 30; i += 1) {
       seedOrders.push(genOrder(i));
     }
 
     setOrders(seedOrders);
-    counterRef.current = 28;
+    counterRef.current = 30;
   }, []);
 
   useEffect(() => {
@@ -409,11 +403,9 @@ export default function Dashboard() {
 
       setRegionStats((prev) => {
         const region = pick(REGIONS);
-        const existing = prev.find((r) => r.city === region);
+        const found = prev.find((r) => r.city === region);
 
-        if (!existing) {
-          return [...prev, { city: region, revenue: amount }];
-        }
+        if (!found) return [...prev, { city: region, revenue: amount }];
 
         return prev.map((r) =>
           r.city === region ? { ...r, revenue: r.revenue + amount } : r
@@ -447,7 +439,6 @@ export default function Dashboard() {
     t3: "#8B949E",
     t4: "#484F58",
     green: "#34D399",
-    red: "#F87171",
   };
 
   const storePerformanceRows = STORES.map((store) => {
@@ -464,9 +455,7 @@ export default function Dashboard() {
     };
   });
 
-  const sortedRegions = [...regionStats]
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 5);
+  const sortedRegions = [...regionStats].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
   return (
     <div
@@ -485,25 +474,28 @@ export default function Dashboard() {
         />
       ))}
 
-      <div style={{ padding: "16px 18px", paddingTop: 70 }}>
+      <div style={{ padding: "12px 18px 14px", paddingTop: 68 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 18,
+            marginBottom: 12,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 26, fontWeight: 900, color: colors.t1 }}>MEAMA</span>
-            <span style={{ color: colors.t4, fontSize: 13 }}>|</span>
-            <span style={{ color: colors.t3, fontSize: 14, fontWeight: 500 }}>Live Operations</span>
+            <span style={{ fontSize: 32, fontWeight: 900, color: colors.t1, letterSpacing: -0.6 }}>
+              MEAMA
+            </span>
+            <span style={{ color: colors.t4, fontSize: 14 }}>|</span>
+            <span style={{ color: colors.t3, fontSize: 15, fontWeight: 500 }}>Live Operations</span>
+
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                marginLeft: 6,
+                marginLeft: 4,
                 background: "#06251C",
                 border: "1px solid #065F46",
                 padding: "5px 12px",
@@ -530,10 +522,11 @@ export default function Dashboard() {
                 year: "numeric",
               })}
             </span>
+
             <span
               style={{
                 color: colors.t1,
-                fontSize: 26,
+                fontSize: 28,
                 fontWeight: 800,
                 fontFamily: "monospace",
                 letterSpacing: 1,
@@ -553,7 +546,7 @@ export default function Dashboard() {
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
             gap: 12,
-            marginBottom: 18,
+            marginBottom: 14,
           }}
         >
           {[
@@ -596,11 +589,11 @@ export default function Dashboard() {
                 background: colors.card,
                 border: `1px solid ${colors.border}`,
                 borderRadius: 8,
-                padding: "16px 18px",
+                padding: "14px 18px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                minHeight: 126,
+                minHeight: 124,
               }}
             >
               <div>
@@ -608,7 +601,7 @@ export default function Dashboard() {
                   style={{
                     color: colors.t3,
                     fontSize: 12,
-                    fontWeight: 500,
+                    fontWeight: 600,
                     marginBottom: 10,
                   }}
                 >
@@ -618,10 +611,11 @@ export default function Dashboard() {
                 <div
                   style={{
                     color: colors.t1,
-                    fontSize: 30,
+                    fontSize: 28,
                     fontWeight: 800,
                     fontFamily: "monospace",
-                    letterSpacing: -0.6,
+                    letterSpacing: -0.5,
+                    lineHeight: 1.05,
                   }}
                 >
                   {kpi.value}
@@ -649,13 +643,13 @@ export default function Dashboard() {
               </div>
 
               <div style={{ marginTop: 2 }}>
-                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={104} h={40} />
+                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={102} h={40} />
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 16 }}>
+        <div style={{ display: "flex", gap: 14 }}>
           <div
             style={{
               flex: 1,
@@ -665,7 +659,7 @@ export default function Dashboard() {
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
-              maxHeight: "calc(100vh - 285px)",
+              height: "calc(100vh - 246px)",
             }}
           >
             <div
@@ -703,7 +697,7 @@ export default function Dashboard() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "82px 92px 1fr 68px 88px 92px 72px",
+                gridTemplateColumns: "82px 92px 1fr 86px 92px 108px 74px",
                 padding: "10px 16px",
                 borderBottom: `1px solid ${colors.border}`,
                 color: colors.t4,
@@ -727,8 +721,8 @@ export default function Dashboard() {
                   key={`${order.id}-${order.ts}`}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "82px 92px 1fr 68px 88px 92px 72px",
-                    padding: "10px 16px",
+                    gridTemplateColumns: "82px 92px 1fr 86px 92px 108px 74px",
+                    padding: "11px 16px",
                     borderBottom: `1px solid ${colors.border}33`,
                     alignItems: "center",
                     background: index === 0 ? `${order.store.color}07` : "transparent",
@@ -739,7 +733,7 @@ export default function Dashboard() {
                     style={{
                       color: colors.t3,
                       fontFamily: "monospace",
-                      fontSize: 11,
+                      fontSize: 12,
                     }}
                   >
                     {order.id}
