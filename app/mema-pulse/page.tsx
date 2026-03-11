@@ -89,6 +89,28 @@ function formatMoney(value: number): string {
   })}`;
 }
 
+function hexToRgba(hex: string, alpha: number) {
+  const cleaned = hex.replace("#", "");
+  const bigint = parseInt(cleaned, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getStoreGlassStyle(color: string) {
+  return {
+    color: hexToRgba(color, 0.88),
+    background: `linear-gradient(180deg, ${hexToRgba(color, 0.1)} 0%, ${hexToRgba(
+      color,
+      0.04
+    )} 100%)`,
+    border: `1px solid ${hexToRgba(color, 0.2)}`,
+    boxShadow: `inset 0 1px 0 ${hexToRgba(color, 0.06)}, 0 0 10px ${hexToRgba(color, 0.05)}`,
+  };
+}
+
 const Sparkline = ({
   data,
   color,
@@ -116,7 +138,7 @@ const Sparkline = ({
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -179,11 +201,11 @@ const PaymentTag = ({
         justifyContent: "center",
         minWidth: 108,
         height: 36,
-        padding: "0 16px",
+        padding: "0 14px",
         borderRadius: 10,
-        background: isSuccess ? "rgba(9, 122, 93, 0.92)" : "rgba(125, 82, 7, 0.92)",
-        border: `1px solid ${isSuccess ? "#15956E" : "#B57A11"}`,
-        color: isSuccess ? "#8BFFD5" : "#FFD16A",
+        background: isSuccess ? "rgba(8, 112, 86, 0.88)" : "rgba(117, 80, 10, 0.88)",
+        border: `1px solid ${isSuccess ? "#138968" : "#A67210"}`,
+        color: isSuccess ? "#A5FFE0" : "#FFD675",
         fontSize: 14,
         fontWeight: 900,
         lineHeight: 1,
@@ -220,18 +242,18 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 30,
+        top: 34,
         left: "50%",
         transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
-        width: "calc(50% - 26px)", // KPI 3 ბოქსის არეს ემთხვევა
+        width: "calc(75% - 26px)",
         minWidth: 980,
         maxWidth: 1320,
-        minHeight: 118, // უფრო ქვემოთ ჩამოდის
+        minHeight: 112,
         background:
-          "linear-gradient(90deg, rgba(7,56,67,0.98) 0%, rgba(12,73,84,0.96) 100%)",
-        border: "1px solid #10E7DD",
+          "linear-gradient(90deg, rgba(10,25,31,0.97) 0%, rgba(13,42,49,0.95) 45%, rgba(15,54,61,0.93) 100%)",
+        border: "1px solid rgba(16, 231, 221, 0.72)",
         borderRadius: 18,
         padding: "26px 26px",
         zIndex: 999,
@@ -239,6 +261,8 @@ const NotificationToast = ({
         alignItems: "center",
         gap: 20,
         boxShadow: "0 22px 58px rgba(0,0,0,0.42)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
       }}
     >
       <div
@@ -246,12 +270,13 @@ const NotificationToast = ({
           width: 58,
           height: 58,
           borderRadius: 16,
-          background: "rgba(5, 211, 192, 0.18)",
+          background: "rgba(26, 99, 105, 0.45)",
           display: "grid",
           placeItems: "center",
-          color: "#4CFFF0",
+          color: "#FFD15C",
           fontSize: 24,
           flexShrink: 0,
+          border: "1px solid rgba(255,255,255,0.05)",
         }}
       >
         🔔
@@ -260,7 +285,7 @@ const NotificationToast = ({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            color: "#E8FFFD",
+            color: "#EEF8F8",
             fontSize: 24,
             fontWeight: 900,
             marginBottom: 8,
@@ -272,7 +297,7 @@ const NotificationToast = ({
 
         <div
           style={{
-            color: "rgba(232,255,253,0.84)",
+            color: "rgba(227,242,242,0.84)",
             fontSize: 17,
             fontWeight: 700,
             lineHeight: 1.3,
@@ -285,7 +310,7 @@ const NotificationToast = ({
             {order.store.short}
           </span>
           {" • "}
-          <span style={{ color: "#BDFBF2" }}>{order.region}</span>
+          <span style={{ color: "rgba(181, 241, 235, 0.92)" }}>{order.region}</span>
           {" • "}
           {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
         </div>
@@ -293,7 +318,7 @@ const NotificationToast = ({
 
       <div
         style={{
-          color: "#19F0CF",
+          color: "#23E9D4",
           fontSize: 40,
           fontWeight: 900,
           fontFamily: "monospace",
@@ -350,6 +375,7 @@ export default function Dashboard() {
       { city: "Kutaisi", revenue: 5458 },
       { city: "Rustavi", revenue: 2910 },
       { city: "Gori", revenue: 748 },
+      { city: "Zugdidi", revenue: 152 },
     ];
 
     setStats(initialStats);
@@ -491,7 +517,14 @@ export default function Dashboard() {
         />
       ))}
 
-      <div style={{ padding: "14px 20px 18px", paddingTop: 96, height: "100vh", overflow: "hidden" }}>
+      <div
+        style={{
+          padding: "14px 20px 18px",
+          paddingTop: 136,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
             display: "flex",
@@ -625,12 +658,19 @@ export default function Dashboard() {
                 overflow: "hidden",
               }}
             >
-              <div style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div
+                style={{
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
                 <div
                   style={{
                     color: colors.t2,
-                    fontSize: 18,
-                    fontWeight: 700,
+                    fontSize: 19,
+                    fontWeight: 800,
                     marginBottom: 10,
                     lineHeight: 1.1,
                   }}
@@ -641,7 +681,7 @@ export default function Dashboard() {
                 <div
                   style={{
                     color: colors.t1,
-                    fontSize: 52,
+                    fontSize: 56,
                     fontWeight: 900,
                     fontFamily: "monospace",
                     letterSpacing: -1.2,
@@ -663,7 +703,7 @@ export default function Dashboard() {
                   <span
                     style={{
                       color: "#31F0AA",
-                      fontSize: 18,
+                      fontSize: 19,
                       fontWeight: 900,
                     }}
                   >
@@ -672,7 +712,7 @@ export default function Dashboard() {
                   <span
                     style={{
                       color: colors.t4,
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: 700,
                     }}
                   >
@@ -694,7 +734,7 @@ export default function Dashboard() {
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             gap: 12,
             alignItems: "stretch",
-            height: "calc(100vh - 302px)",
+            height: "calc(100vh - 342px)",
             minHeight: 500,
           }}
         >
@@ -749,10 +789,10 @@ export default function Dashboard() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "112px 150px minmax(260px, 1.18fr) 130px 92px 128px 146px 108px",
-                padding: "12px 18px",
+                padding: "14px 18px",
                 borderBottom: `1px solid ${colors.border}`,
                 color: colors.t4,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 800,
                 letterSpacing: 0.35,
               }}
@@ -773,7 +813,8 @@ export default function Dashboard() {
                   key={`${order.id}-${order.ts}`}
                   style={{
                     display: "grid",
-                    gridTemplateColumns:  "112px 150px minmax(260px, 1.18fr) 130px 92px 128px 146px 108px",
+                    gridTemplateColumns:
+                      "112px 150px minmax(260px, 1.18fr) 130px 92px 128px 146px 108px",
                     padding: "16px 18px",
                     borderBottom: `1px solid ${colors.border}33`,
                     alignItems: "center",
@@ -781,44 +822,61 @@ export default function Dashboard() {
                       index === 0
                         ? "linear-gradient(90deg, rgba(39,52,73,0.32) 0%, rgba(25,30,38,0.04) 100%)"
                         : "transparent",
-                    minHeight: 62,
+                    minHeight: 66,
+                    columnGap: 8,
                   }}
                 >
                   <div
                     style={{
                       color: "#B7C4D4",
                       fontFamily: "monospace",
-                      fontSize: 18,
-                      fontWeight: 700,
+                      fontSize: 16,
+                      fontWeight: 800,
                     }}
                   >
                     {order.id}
                   </div>
-<div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-  <div
-    style={{
-      width: 9,
-      height: 9,
-      borderRadius: "50%",
-      background: order.store.color,
-      flexShrink: 0,
-    }}
-  />
-  <span
-    style={{
-      color: order.store.color,
-      fontSize: 16,
-      fontWeight: 900,
-      whiteSpace: "nowrap",
-    }}
-  >
-    {order.store.short}
-  </span>
-</div>
+
+                  <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+                    <div
+                      style={{
+                        ...getStoreGlassStyle(order.store.color),
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 10px",
+                        borderRadius: 999,
+                        backdropFilter: "blur(10px)",
+                        WebkitBackdropFilter: "blur(10px)",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: hexToRgba(order.store.color, 0.82),
+                          boxShadow: `0 0 8px ${hexToRgba(order.store.color, 0.2)}`,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 800,
+                          whiteSpace: "nowrap",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {order.store.short}
+                      </span>
+                    </div>
+                  </div>
 
                   <div
                     style={{
-                      color: "#D3DCE6",
+                      color: "#E2E9F2",
                       fontSize: 16,
                       fontWeight: 700,
                       overflow: "hidden",
@@ -832,7 +890,7 @@ export default function Dashboard() {
 
                   <div
                     style={{
-                      color: colors.t3,
+                      color: colors.t2,
                       fontSize: 15,
                       fontWeight: 700,
                     }}
@@ -865,7 +923,7 @@ export default function Dashboard() {
                     ₾{order.total.toFixed(0)}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "center",paddingLeft: 4  }}>
+                  <div style={{ display: "flex", justifyContent: "center", paddingLeft: 4 }}>
                     <PaymentTag type={order.status} />
                   </div>
 
@@ -933,22 +991,24 @@ export default function Dashboard() {
                       }}
                     >
                       <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 5 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 6 }}>
                           <div
                             style={{
                               width: 9,
                               height: 9,
-                              borderRadius: 2,
-                              background: store.color,
+                              borderRadius: 3,
+                              background: hexToRgba(store.color, 0.82),
+                              boxShadow: `0 0 10px ${hexToRgba(store.color, 0.22)}`,
                               flexShrink: 0,
                             }}
                           />
                           <span
                             style={{
-                              color: colors.t1,
+                              color: "#E7EEF8",
                               fontSize: 18,
                               fontWeight: 800,
                               lineHeight: 1.1,
+                              textShadow: `0 0 10px ${hexToRgba(store.color, 0.08)}`,
                             }}
                           >
                             {store.short}
@@ -999,10 +1059,10 @@ export default function Dashboard() {
                         style={{
                           height: "100%",
                           borderRadius: 999,
-                          background: store.color,
+                          background: hexToRgba(store.color, 0.9),
                           width: `${Math.max(store.share, 8)}%`,
                           transition: "width 0.8s ease",
-                          opacity: 0.95,
+                          opacity: 0.9,
                         }}
                       />
                     </div>
