@@ -91,8 +91,8 @@ function formatMoney(value: number): string {
 const Sparkline = ({
   data,
   color,
-  w = 112,
-  h = 42,
+  w = 128,
+  h = 50,
 }: {
   data: number[];
   color: string;
@@ -105,7 +105,7 @@ const Sparkline = ({
   const step = w / Math.max(data.length - 1, 1);
 
   const points = data
-    .map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 4) - 2}`)
+    .map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 6) - 3}`)
     .join(" ");
 
   const areaPoints = `${points} ${w},${h} 0,${h}`;
@@ -115,7 +115,7 @@ const Sparkline = ({
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.26" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -124,7 +124,7 @@ const Sparkline = ({
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="1.8"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -179,15 +179,16 @@ const Badge = ({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "6px 14px",
-        borderRadius: 6,
-        fontSize: 12,
-        fontWeight: 700,
+        padding: "9px 16px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
         background: styles.bg,
         color: styles.color,
         border: `1px solid ${styles.border}`,
-        minWidth: 92,
+        minWidth: 98,
         lineHeight: 1,
+        whiteSpace: "nowrap",
       }}
     >
       {text}
@@ -219,35 +220,36 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 6,
+        top: 10,
         left: "50%",
-        transform: `translateX(-50%) translateY(${visible ? "0" : "-10px"})`,
+        transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
-        transition: "all 0.25s ease",
-        width: 570,
-        maxWidth: "calc(100vw - 40px)",
+        transition: "all 0.28s ease",
+        width: "calc(50vw - 34px)",
+        minWidth: 760,
+        maxWidth: 1030,
         background: "#161B22",
-        border: "1px solid #21262D",
-        borderLeft: `3px solid ${order.store.color}`,
-        borderRadius: 7,
-        padding: "12px 16px",
+        border: "1px solid #2A3140",
+        borderLeft: `4px solid ${order.store.color}`,
+        borderRadius: 10,
+        padding: "16px 20px",
         zIndex: 999,
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        boxShadow: "0 18px 50px rgba(0,0,0,0.36)",
+        gap: 16,
+        boxShadow: "0 22px 55px rgba(0,0,0,0.38)",
       }}
     >
       <div
         style={{
-          width: 34,
-          height: 34,
-          borderRadius: 8,
+          width: 42,
+          height: 42,
+          borderRadius: 10,
           background: `${order.store.color}20`,
           display: "grid",
           placeItems: "center",
           color: order.store.color,
-          fontSize: 16,
+          fontSize: 18,
           flexShrink: 0,
         }}
       >
@@ -258,10 +260,10 @@ const NotificationToast = ({
         <div
           style={{
             color: "#F0F6FC",
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: 0.5,
-            marginBottom: 4,
+            fontSize: 13,
+            fontWeight: 900,
+            letterSpacing: 0.7,
+            marginBottom: 5,
           }}
         >
           NEW ORDER
@@ -272,15 +274,16 @@ const NotificationToast = ({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: 10,
+            gap: 14,
           }}
         >
           <span
             style={{
               color: "#F0F6FC",
-              fontSize: 20,
-              fontWeight: 800,
+              fontSize: 28,
+              fontWeight: 900,
               fontFamily: "monospace",
+              lineHeight: 1,
             }}
           >
             #{order.id}
@@ -289,9 +292,10 @@ const NotificationToast = ({
           <span
             style={{
               color: "#F0F6FC",
-              fontSize: 24,
-              fontWeight: 800,
+              fontSize: 30,
+              fontWeight: 900,
               fontFamily: "monospace",
+              lineHeight: 1,
             }}
           >
             ₾{order.total.toFixed(0)}
@@ -301,8 +305,8 @@ const NotificationToast = ({
         <div
           style={{
             color: "#8B949E",
-            fontSize: 11,
-            marginTop: 4,
+            fontSize: 13,
+            marginTop: 6,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -474,21 +478,29 @@ export default function Dashboard() {
         />
       ))}
 
-      <div style={{ padding: "12px 18px 14px", paddingTop: 68 }}>
+      <div style={{ padding: "12px 18px 16px", paddingTop: 86 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: 14,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 32, fontWeight: 900, color: colors.t1, letterSpacing: -0.6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span
+              style={{
+                fontSize: 42,
+                fontWeight: 900,
+                color: colors.t1,
+                letterSpacing: -0.8,
+                lineHeight: 1,
+              }}
+            >
               MEAMA
             </span>
-            <span style={{ color: colors.t4, fontSize: 14 }}>|</span>
-            <span style={{ color: colors.t3, fontSize: 15, fontWeight: 500 }}>Live Operations</span>
+            <span style={{ color: colors.t4, fontSize: 16 }}>|</span>
+            <span style={{ color: colors.t3, fontSize: 18, fontWeight: 600 }}>Live Operations</span>
 
             <div
               style={{
@@ -498,24 +510,24 @@ export default function Dashboard() {
                 marginLeft: 4,
                 background: "#06251C",
                 border: "1px solid #065F46",
-                padding: "5px 12px",
-                borderRadius: 6,
+                padding: "6px 13px",
+                borderRadius: 7,
               }}
             >
               <div
                 style={{
-                  width: 7,
-                  height: 7,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   background: colors.green,
                 }}
               />
-              <span style={{ color: colors.green, fontSize: 11, fontWeight: 700 }}>LIVE</span>
+              <span style={{ color: colors.green, fontSize: 12, fontWeight: 800 }}>LIVE</span>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ color: colors.t3, fontSize: 14 }}>
+            <span style={{ color: colors.t3, fontSize: 15 }}>
               {time.toLocaleDateString("en-US", {
                 day: "2-digit",
                 month: "short",
@@ -526,10 +538,11 @@ export default function Dashboard() {
             <span
               style={{
                 color: colors.t1,
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: 800,
                 fontFamily: "monospace",
                 letterSpacing: 1,
+                lineHeight: 1,
               }}
             >
               {time.toLocaleTimeString("en-GB", {
@@ -544,7 +557,7 @@ export default function Dashboard() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             gap: 12,
             marginBottom: 14,
           }}
@@ -589,20 +602,22 @@ export default function Dashboard() {
                 background: colors.card,
                 border: `1px solid ${colors.border}`,
                 borderRadius: 8,
-                padding: "14px 18px",
+                padding: "16px 20px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                minHeight: 124,
+                minHeight: 136,
+                overflow: "hidden",
               }}
             >
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div
                   style={{
                     color: colors.t3,
-                    fontSize: 12,
-                    fontWeight: 600,
+                    fontSize: 14,
+                    fontWeight: 700,
                     marginBottom: 10,
+                    letterSpacing: 0.2,
                   }}
                 >
                   {kpi.label}
@@ -611,11 +626,11 @@ export default function Dashboard() {
                 <div
                   style={{
                     color: colors.t1,
-                    fontSize: 28,
-                    fontWeight: 800,
+                    fontSize: 36,
+                    fontWeight: 900,
                     fontFamily: "monospace",
-                    letterSpacing: -0.5,
-                    lineHeight: 1.05,
+                    letterSpacing: -0.8,
+                    lineHeight: 1.02,
                   }}
                 >
                   {kpi.value}
@@ -625,41 +640,52 @@ export default function Dashboard() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 5,
-                    marginTop: 8,
+                    gap: 6,
+                    marginTop: 10,
+                    flexWrap: "wrap",
                   }}
                 >
                   <span
                     style={{
                       color: colors.green,
-                      fontSize: 12,
-                      fontWeight: 700,
+                      fontSize: 13,
+                      fontWeight: 800,
                     }}
                   >
                     ↗ {kpi.pct}
                   </span>
-                  <span style={{ color: colors.t4, fontSize: 10 }}>({kpi.delta})</span>
+                  <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
+                    ({kpi.delta})
+                  </span>
                 </div>
               </div>
 
-              <div style={{ marginTop: 2 }}>
-                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={102} h={40} />
+              <div style={{ marginTop: 0, marginLeft: 14, flexShrink: 0 }}>
+                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={128} h={50} />
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 14 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 12,
+            alignItems: "start",
+          }}
+        >
           <div
             style={{
-              flex: 1,
+              gridColumn: "1 / span 3",
               background: colors.card,
               border: `1px solid ${colors.border}`,
               borderRadius: 8,
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
-              height: "calc(100vh - 246px)",
+              height: "calc(100vh - 284px)",
+              minHeight: 520,
             }}
           >
             <div
@@ -667,7 +693,8 @@ export default function Dashboard() {
                 display: "flex",
                 alignItems: "center",
                 borderBottom: `1px solid ${colors.border}`,
-                padding: "0 16px",
+                padding: "0 18px",
+                minHeight: 54,
               }}
             >
               {["All", ...STORES.map((store) => store.short)].map((tab) => (
@@ -678,10 +705,10 @@ export default function Dashboard() {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    padding: "11px 14px",
+                    padding: "14px 14px",
                     color: filter === tab ? colors.t1 : colors.t4,
-                    fontSize: 13,
-                    fontWeight: filter === tab ? 700 : 500,
+                    fontSize: 14,
+                    fontWeight: filter === tab ? 800 : 600,
                     borderBottom:
                       filter === tab ? `2px solid ${colors.t1}` : "2px solid transparent",
                     transition: "all 0.15s",
@@ -691,19 +718,21 @@ export default function Dashboard() {
                 </button>
               ))}
               <div style={{ flex: 1 }} />
-              <span style={{ color: colors.t4, fontSize: 11 }}>{filteredOrders.length} orders</span>
+              <span style={{ color: colors.t4, fontSize: 12, fontWeight: 600 }}>
+                {filteredOrders.length} orders
+              </span>
             </div>
 
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "82px 92px 1fr 86px 92px 108px 74px",
-                padding: "10px 16px",
+                gridTemplateColumns: "96px 110px minmax(320px, 1fr) 92px 104px 118px 76px",
+                padding: "12px 18px",
                 borderBottom: `1px solid ${colors.border}`,
                 color: colors.t4,
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: 0.3,
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: 0.35,
               }}
             >
               <div># Order ID</div>
@@ -721,59 +750,70 @@ export default function Dashboard() {
                   key={`${order.id}-${order.ts}`}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "82px 92px 1fr 86px 92px 108px 74px",
-                    padding: "11px 16px",
+                    gridTemplateColumns: "96px 110px minmax(320px, 1fr) 92px 104px 118px 76px",
+                    padding: "14px 18px",
                     borderBottom: `1px solid ${colors.border}33`,
                     alignItems: "center",
                     background: index === 0 ? `${order.store.color}07` : "transparent",
                     transition: "background 0.35s",
+                    minHeight: 58,
                   }}
                 >
                   <div
                     style={{
                       color: colors.t3,
                       fontFamily: "monospace",
-                      fontSize: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
                     }}
                   >
                     {order.id}
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                     <div
                       style={{
-                        width: 6,
-                        height: 6,
+                        width: 7,
+                        height: 7,
                         borderRadius: "50%",
                         background: order.store.color,
                         flexShrink: 0,
                       }}
                     />
-                    <span style={{ color: colors.t2, fontSize: 12 }}>{order.store.short}</span>
+                    <span style={{ color: colors.t2, fontSize: 13, fontWeight: 600 }}>
+                      {order.store.short}
+                    </span>
                   </div>
 
                   <div
                     style={{
-                      color: colors.t3,
-                      fontSize: 12,
+                      color: colors.t2,
+                      fontSize: 13,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
-                      paddingRight: 8,
+                      paddingRight: 10,
                     }}
                   >
                     {order.items.map((item) => item.name).join(", ")}
                   </div>
 
-                  <div style={{ color: colors.t3, fontSize: 12, textAlign: "center" }}>
+                  <div
+                    style={{
+                      color: colors.t3,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      textAlign: "center",
+                    }}
+                  >
                     {order.itemCount} items
                   </div>
 
                   <div
                     style={{
                       color: colors.t1,
-                      fontWeight: 700,
-                      fontSize: 13,
+                      fontWeight: 800,
+                      fontSize: 14,
                       fontFamily: "monospace",
                       textAlign: "right",
                     }}
@@ -781,7 +821,7 @@ export default function Dashboard() {
                     ₾{order.total.toFixed(0)}
                   </div>
 
-                  <div style={{ textAlign: "center" }}>
+                  <div style={{ textAlign: "center", display: "flex", justifyContent: "center" }}>
                     <Badge text={order.status} type={order.status} />
                   </div>
 
@@ -789,8 +829,9 @@ export default function Dashboard() {
                     style={{
                       textAlign: "center",
                       color: colors.t2,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontFamily: "monospace",
+                      fontWeight: 600,
                     }}
                   >
                     {order.time}
@@ -802,11 +843,11 @@ export default function Dashboard() {
 
           <div
             style={{
-              width: 300,
-              flexShrink: 0,
+              gridColumn: "4",
               display: "flex",
               flexDirection: "column",
               gap: 10,
+              minWidth: 0,
             }}
           >
             <div
@@ -820,10 +861,10 @@ export default function Dashboard() {
               <div
                 style={{
                   color: colors.t2,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: 0.6,
-                  marginBottom: 14,
+                  fontSize: 12,
+                  fontWeight: 900,
+                  letterSpacing: 0.65,
+                  marginBottom: 16,
                   textTransform: "uppercase",
                 }}
               >
@@ -837,19 +878,27 @@ export default function Dashboard() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      marginBottom: 5,
+                      marginBottom: 6,
+                      gap: 10,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                       <div
                         style={{
                           width: 8,
                           height: 8,
                           borderRadius: 2,
                           background: store.color,
+                          flexShrink: 0,
                         }}
                       />
-                      <span style={{ color: colors.t2, fontSize: 12, fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: colors.t2,
+                          fontSize: 13,
+                          fontWeight: 700,
+                        }}
+                      >
                         {store.short}
                       </span>
                     </div>
@@ -857,9 +906,10 @@ export default function Dashboard() {
                     <span
                       style={{
                         color: colors.t1,
-                        fontSize: 14,
-                        fontWeight: 800,
+                        fontSize: 15,
+                        fontWeight: 900,
                         fontFamily: "monospace",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       ₾{store.revenue.toLocaleString("en-US", {
@@ -868,25 +918,34 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                  <div style={{ display: "flex", gap: 12, marginBottom: 7 }}>
-                    <span style={{ color: colors.t4, fontSize: 10 }}>{store.orders} orders</span>
-                    <span style={{ color: colors.t4, fontSize: 10 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      marginBottom: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
+                      {store.orders} orders
+                    </span>
+                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
                       avg ₾{store.avg.toFixed(1)}
                     </span>
-                    <span style={{ color: colors.t4, fontSize: 10 }}>
+                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
                       {store.share.toFixed(1)}%
                     </span>
                   </div>
 
-                  <div style={{ height: 3, borderRadius: 2, background: colors.border }}>
+                  <div style={{ height: 4, borderRadius: 999, background: colors.border }}>
                     <div
                       style={{
                         height: "100%",
-                        borderRadius: 2,
+                        borderRadius: 999,
                         background: store.color,
                         width: `${store.share}%`,
                         transition: "width 0.8s ease",
-                        opacity: 0.9,
+                        opacity: 0.95,
                       }}
                     />
                   </div>
@@ -905,10 +964,10 @@ export default function Dashboard() {
               <div
                 style={{
                   color: colors.t2,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: 0.6,
-                  marginBottom: 12,
+                  fontSize: 12,
+                  fontWeight: 900,
+                  letterSpacing: 0.65,
+                  marginBottom: 14,
                   textTransform: "uppercase",
                 }}
               >
@@ -922,20 +981,24 @@ export default function Dashboard() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    padding: "8px 0",
+                    padding: "10px 0",
                     borderBottom:
                       index < sortedRegions.length - 1
                         ? `1px solid ${colors.border}33`
                         : "none",
+                    gap: 12,
                   }}
                 >
-                  <span style={{ color: colors.t4, fontSize: 12 }}>{region.city}</span>
+                  <span style={{ color: colors.t3, fontSize: 13, fontWeight: 600 }}>
+                    {region.city}
+                  </span>
                   <span
                     style={{
                       color: colors.t2,
-                      fontSize: 13,
-                      fontWeight: 700,
+                      fontSize: 14,
+                      fontWeight: 800,
                       fontFamily: "monospace",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     ₾{region.revenue.toLocaleString("en-US", {
