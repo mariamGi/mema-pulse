@@ -101,13 +101,14 @@ function hexToRgba(hex: string, alpha: number) {
 
 function getStoreGlassStyle(color: string) {
   return {
-    color: hexToRgba(color, 0.88),
-    background: `linear-gradient(180deg, ${hexToRgba(color, 0.1)} 0%, ${hexToRgba(
-      color,
-      0.04
-    )} 100%)`,
-    border: `1px solid ${hexToRgba(color, 0.2)}`,
-    boxShadow: `inset 0 1px 0 ${hexToRgba(color, 0.06)}, 0 0 10px ${hexToRgba(color, 0.05)}`,
+    color: "#EAF2FB",
+    background: `linear-gradient(180deg, rgba(14, 22, 32, 0.82) 0%, rgba(11, 18, 27, 0.72) 100%)`,
+    border: `1px solid ${hexToRgba(color, 0.22)}`,
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.04),
+      0 0 0 1px rgba(255,255,255,0.015),
+      0 10px 24px rgba(0,0,0,0.18)
+    `,
   };
 }
 
@@ -242,41 +243,43 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 34,
-        left: "50%",
+        top: 30,
+        left: "calc(50% + 34px)",
         transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
         width: "calc(75% - 26px)",
         minWidth: 980,
         maxWidth: 1320,
-        minHeight: 112,
+        minHeight: 122,
         background:
-          "linear-gradient(90deg, rgba(10,25,31,0.97) 0%, rgba(13,42,49,0.95) 45%, rgba(15,54,61,0.93) 100%)",
-        border: "1px solid rgba(16, 231, 221, 0.72)",
+          "linear-gradient(90deg, rgba(8,16,24,0.98) 0%, rgba(12,25,35,0.97) 52%, rgba(14,37,42,0.95) 100%)",
+        border: "1px solid rgba(28, 220, 210, 0.48)",
         borderRadius: 18,
-        padding: "26px 26px",
+        padding: "28px 28px",
         zIndex: 999,
         display: "flex",
         alignItems: "center",
         gap: 20,
-        boxShadow: "0 22px 58px rgba(0,0,0,0.42)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
+        boxShadow:
+          "0 24px 60px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.03)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
       }}
     >
       <div
         style={{
-          width: 58,
-          height: 58,
+          width: 60,
+          height: 60,
           borderRadius: 16,
-          background: "rgba(26, 99, 105, 0.45)",
+          background: "linear-gradient(180deg, rgba(21,58,66,0.88) 0%, rgba(18,47,54,0.78) 100%)",
           display: "grid",
           placeItems: "center",
-          color: "#FFD15C",
+          color: "#FFC85A",
           fontSize: 24,
           flexShrink: 0,
-          border: "1px solid rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
         }}
       >
         🔔
@@ -285,11 +288,11 @@ const NotificationToast = ({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            color: "#EEF8F8",
-            fontSize: 24,
+            color: "#F5FAFC",
+            fontSize: 25,
             fontWeight: 900,
             marginBottom: 8,
-            lineHeight: 1.08,
+            lineHeight: 1.05,
           }}
         >
           New Order #{order.id}
@@ -297,7 +300,7 @@ const NotificationToast = ({
 
         <div
           style={{
-            color: "rgba(227,242,242,0.84)",
+            color: "rgba(222,234,240,0.84)",
             fontSize: 17,
             fontWeight: 700,
             lineHeight: 1.3,
@@ -306,11 +309,17 @@ const NotificationToast = ({
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ fontWeight: 900, color: "#FFFFFF", fontSize: 19 }}>
+          <span
+            style={{
+              color: "#FFFFFF",
+              fontWeight: 900,
+              fontSize: 19,
+            }}
+          >
             {order.store.short}
           </span>
           {" • "}
-          <span style={{ color: "rgba(181, 241, 235, 0.92)" }}>{order.region}</span>
+          <span style={{ color: "rgba(155, 228, 220, 0.86)" }}>{order.region}</span>
           {" • "}
           {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
         </div>
@@ -318,12 +327,13 @@ const NotificationToast = ({
 
       <div
         style={{
-          color: "#23E9D4",
+          color: "#2DE2D1",
           fontSize: 40,
           fontWeight: 900,
           fontFamily: "monospace",
           whiteSpace: "nowrap",
           lineHeight: 1,
+          textShadow: "0 0 14px rgba(45, 226, 209, 0.14)",
         }}
       >
         ₾{order.total.toFixed(2)}
@@ -838,41 +848,42 @@ export default function Dashboard() {
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
-                    <div
-                      style={{
-                        ...getStoreGlassStyle(order.store.color),
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        backdropFilter: "blur(10px)",
-                        WebkitBackdropFilter: "blur(10px)",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: hexToRgba(order.store.color, 0.82),
-                          boxShadow: `0 0 8px ${hexToRgba(order.store.color, 0.2)}`,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 800,
-                          whiteSpace: "nowrap",
-                          lineHeight: 1,
-                        }}
-                      >
-                        {order.store.short}
-                      </span>
-                    </div>
-                  </div>
+  <div
+    style={{
+      ...getStoreGlassStyle(order.store.color),
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "7px 12px",
+      borderRadius: 999,
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
+      maxWidth: "100%",
+    }}
+  >
+    <div
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        background: hexToRgba(order.store.color, 0.72),
+        boxShadow: `0 0 8px ${hexToRgba(order.store.color, 0.16)}`,
+        flexShrink: 0,
+      }}
+    />
+    <span
+      style={{
+        color: "#EAF2FB",
+        fontSize: 15,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+        lineHeight: 1,
+      }}
+    >
+      {order.store.short}
+    </span>
+  </div>
+</div>
 
                   <div
                     style={{
@@ -992,28 +1003,42 @@ export default function Dashboard() {
                     >
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 6 }}>
-                          <div
-                            style={{
-                              width: 9,
-                              height: 9,
-                              borderRadius: 3,
-                              background: hexToRgba(store.color, 0.82),
-                              boxShadow: `0 0 10px ${hexToRgba(store.color, 0.22)}`,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <span
-                            style={{
-                              color: "#E7EEF8",
-                              fontSize: 18,
-                              fontWeight: 800,
-                              lineHeight: 1.1,
-                              textShadow: `0 0 10px ${hexToRgba(store.color, 0.08)}`,
-                            }}
-                          >
-                            {store.short}
-                          </span>
-                        </div>
+ <div
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 9,
+    marginBottom: 6,
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "linear-gradient(180deg, rgba(14,22,32,0.78) 0%, rgba(10,17,26,0.72) 100%)",
+    border: `1px solid ${hexToRgba(store.color, 0.18)}`,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+    width: "fit-content",
+  }}
+>
+  <div
+    style={{
+      width: 8,
+      height: 8,
+      borderRadius: "50%",
+      background: hexToRgba(store.color, 0.72),
+      boxShadow: `0 0 8px ${hexToRgba(store.color, 0.14)}`,
+      flexShrink: 0,
+    }}
+  />
+  <span
+    style={{
+      color: "#EAF1FA",
+      fontSize: 17,
+      fontWeight: 800,
+      lineHeight: 1.05,
+    }}
+  >
+    {store.short}
+  </span>
+</div>
+</div>
 
                         <div
                           style={{
