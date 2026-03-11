@@ -177,15 +177,15 @@ const PaymentTag = ({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        minWidth: 122,
-        height: 34,
+        minWidth: 108,
+        height: 36,
         padding: "0 16px",
-        borderRadius: 9,
+        borderRadius: 10,
         background: isSuccess ? "rgba(9, 122, 93, 0.92)" : "rgba(125, 82, 7, 0.92)",
         border: `1px solid ${isSuccess ? "#15956E" : "#B57A11"}`,
         color: isSuccess ? "#8BFFD5" : "#FFD16A",
         fontSize: 14,
-        fontWeight: 800,
+        fontWeight: 900,
         lineHeight: 1,
         whiteSpace: "nowrap",
         boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
@@ -220,35 +220,37 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 12,
-        left: "50%",
-        transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
+        top: 14,
+        left: 20,
+        transform: `translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
-        width: "calc(50vw - 34px)",
-        minWidth: 780,
-        maxWidth: 1040,
-        background: "linear-gradient(90deg, rgba(7,56,67,0.96) 0%, rgba(12,73,84,0.94) 100%)",
-        border: "1px solid #0DD2C7",
-        borderRadius: 16,
-        padding: "18px 22px",
+        width: "calc(75% - 26px)", // KPI 3 ბოქსის არეს ემთხვევა
+        minWidth: 980,
+        maxWidth: 1320,
+        minHeight: 112, // უფრო ქვემოთ ჩამოდის
+        background:
+          "linear-gradient(90deg, rgba(7,56,67,0.98) 0%, rgba(12,73,84,0.96) 100%)",
+        border: "1px solid #10E7DD",
+        borderRadius: 18,
+        padding: "26px 26px",
         zIndex: 999,
         display: "flex",
         alignItems: "center",
-        gap: 18,
-        boxShadow: "0 20px 55px rgba(0,0,0,0.42)",
+        gap: 20,
+        boxShadow: "0 22px 58px rgba(0,0,0,0.42)",
       }}
     >
       <div
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
+          width: 58,
+          height: 58,
+          borderRadius: 16,
           background: "rgba(5, 211, 192, 0.18)",
           display: "grid",
           placeItems: "center",
           color: "#4CFFF0",
-          fontSize: 20,
+          fontSize: 24,
           flexShrink: 0,
         }}
       >
@@ -259,10 +261,10 @@ const NotificationToast = ({
         <div
           style={{
             color: "#E8FFFD",
-            fontSize: 16,
+            fontSize: 24,
             fontWeight: 900,
-            marginBottom: 4,
-            lineHeight: 1,
+            marginBottom: 8,
+            lineHeight: 1.08,
           }}
         >
           New Order #{order.id}
@@ -270,15 +272,21 @@ const NotificationToast = ({
 
         <div
           style={{
-            color: "rgba(232,255,253,0.74)",
-            fontSize: 15,
-            fontWeight: 600,
+            color: "rgba(232,255,253,0.84)",
+            fontSize: 17,
+            fontWeight: 700,
+            lineHeight: 1.3,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
           }}
         >
-          {order.store.short} • {order.region} •{" "}
+          <span style={{ fontWeight: 900, color: "#FFFFFF", fontSize: 19 }}>
+            {order.store.short}
+          </span>
+          {" • "}
+          <span style={{ color: "#BDFBF2" }}>{order.region}</span>
+          {" • "}
           {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
         </div>
       </div>
@@ -286,7 +294,7 @@ const NotificationToast = ({
       <div
         style={{
           color: "#19F0CF",
-          fontSize: 32,
+          fontSize: 40,
           fontWeight: 900,
           fontFamily: "monospace",
           whiteSpace: "nowrap",
@@ -740,7 +748,7 @@ export default function Dashboard() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "100px 138px minmax(300px, 1.5fr) 116px 92px 120px 94px 110px",
+                gridTemplateColumns: "112px 150px minmax(260px, 1.18fr) 130px 92px 128px 146px 108px",
                 padding: "12px 18px",
                 borderBottom: `1px solid ${colors.border}`,
                 color: colors.t4,
@@ -765,8 +773,8 @@ export default function Dashboard() {
                   key={`${order.id}-${order.ts}`}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "100px 138px minmax(300px, 1.5fr) 116px 92px 120px 94px 110px",
-                    padding: "14px 18px",
+                    gridTemplateColumns:  "112px 150px minmax(260px, 1.18fr) 130px 92px 128px 146px 108px",
+                    padding: "16px 18px",
                     borderBottom: `1px solid ${colors.border}33`,
                     alignItems: "center",
                     background:
@@ -780,44 +788,43 @@ export default function Dashboard() {
                     style={{
                       color: "#B7C4D4",
                       fontFamily: "monospace",
-                      fontSize: 15,
+                      fontSize: 18,
                       fontWeight: 700,
                     }}
                   >
                     {order.id}
                   </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: order.store.color,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{
-                        color: order.store.color,
-                        fontSize: 15,
-                        fontWeight: 800,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {order.store.short}
-                    </span>
-                  </div>
+<div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+  <div
+    style={{
+      width: 9,
+      height: 9,
+      borderRadius: "50%",
+      background: order.store.color,
+      flexShrink: 0,
+    }}
+  />
+  <span
+    style={{
+      color: order.store.color,
+      fontSize: 16,
+      fontWeight: 900,
+      whiteSpace: "nowrap",
+    }}
+  >
+    {order.store.short}
+  </span>
+</div>
 
                   <div
                     style={{
                       color: "#D3DCE6",
-                      fontSize: 15,
-                      fontWeight: 600,
+                      fontSize: 16,
+                      fontWeight: 700,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
-                      paddingRight: 10,
+                      paddingRight: 8,
                     }}
                   >
                     {order.items.map((item) => `${item.name} x${item.qty}`).join(", ")}
@@ -826,7 +833,7 @@ export default function Dashboard() {
                   <div
                     style={{
                       color: colors.t3,
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: 700,
                     }}
                   >
@@ -836,8 +843,8 @@ export default function Dashboard() {
                   <div
                     style={{
                       color: colors.t2,
-                      fontSize: 15,
-                      fontWeight: 700,
+                      fontSize: 16,
+                      fontWeight: 800,
                       textAlign: "center",
                     }}
                   >
@@ -848,16 +855,17 @@ export default function Dashboard() {
                     style={{
                       color: colors.t1,
                       fontWeight: 900,
-                      fontSize: 18,
+                      fontSize: 19,
                       fontFamily: "monospace",
                       textAlign: "right",
                       whiteSpace: "nowrap",
+                      paddingRight: 8,
                     }}
                   >
                     ₾{order.total.toFixed(0)}
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "center",paddingLeft: 4  }}>
                     <PaymentTag type={order.status} />
                   </div>
 
