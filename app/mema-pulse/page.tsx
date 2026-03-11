@@ -220,15 +220,15 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 14,
-        left: 20,
-        transform: `translateY(${visible ? "0" : "-12px"})`,
+        top: 30,
+        left: "50%",
+        transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
-        width: "calc(75% - 26px)", // KPI 3 ბოქსის არეს ემთხვევა
+        width: "calc(50% - 26px)", // KPI 3 ბოქსის არეს ემთხვევა
         minWidth: 980,
         maxWidth: 1320,
-        minHeight: 112, // უფრო ქვემოთ ჩამოდის
+        minHeight: 118, // უფრო ქვემოთ ჩამოდის
         background:
           "linear-gradient(90deg, rgba(7,56,67,0.98) 0%, rgba(12,73,84,0.96) 100%)",
         border: "1px solid #10E7DD",
