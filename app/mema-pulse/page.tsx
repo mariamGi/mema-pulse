@@ -26,6 +26,7 @@ type Order = {
   date: string;
   ts: number;
   status: "Success" | "Partial";
+  region: string;
 };
 
 type StoreStats = {
@@ -91,8 +92,8 @@ function formatMoney(value: number): string {
 const Sparkline = ({
   data,
   color,
-  w = 128,
-  h = 50,
+  w = 150,
+  h = 60,
 }: {
   data: number[];
   color: string;
@@ -105,7 +106,7 @@ const Sparkline = ({
   const step = w / Math.max(data.length - 1, 1);
 
   const points = data
-    .map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 6) - 3}`)
+    .map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 8) - 4}`)
     .join(" ");
 
   const areaPoints = `${points} ${w},${h} 0,${h}`;
@@ -115,7 +116,7 @@ const Sparkline = ({
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.26" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -124,7 +125,7 @@ const Sparkline = ({
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="2.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -135,6 +136,7 @@ const Sparkline = ({
 const genOrder = (id: number): Order => {
   const store = pick(STORES);
   const count = rand(1, 4);
+  const region = pick(REGIONS);
   const items = Array.from({ length: count }, () => ({
     name: pick(PRODUCTS),
     qty: rand(1, 5),
@@ -158,41 +160,39 @@ const genOrder = (id: number): Order => {
     }),
     ts: Date.now(),
     status: Math.random() > 0.18 ? "Success" : "Partial",
+    region,
   };
 };
 
-const Badge = ({
-  text,
+const PaymentTag = ({
   type,
 }: {
-  text: string;
   type: "Success" | "Partial";
 }) => {
-  const styles =
-    type === "Success"
-      ? { bg: "#085E46", color: "#44E0A3", border: "#0B7C5C" }
-      : { bg: "#5D3A08", color: "#F3C256", border: "#8B5E13" };
+  const isSuccess = type === "Success";
 
   return (
-    <span
+    <div
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "9px 16px",
-        borderRadius: 8,
-        fontSize: 13,
+        minWidth: 122,
+        height: 34,
+        padding: "0 16px",
+        borderRadius: 9,
+        background: isSuccess ? "rgba(9, 122, 93, 0.92)" : "rgba(125, 82, 7, 0.92)",
+        border: `1px solid ${isSuccess ? "#15956E" : "#B57A11"}`,
+        color: isSuccess ? "#8BFFD5" : "#FFD16A",
+        fontSize: 14,
         fontWeight: 800,
-        background: styles.bg,
-        color: styles.color,
-        border: `1px solid ${styles.border}`,
-        minWidth: 98,
         lineHeight: 1,
         whiteSpace: "nowrap",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
       }}
     >
-      {text}
-    </span>
+      {type}
+    </div>
   );
 };
 
@@ -220,36 +220,35 @@ const NotificationToast = ({
     <div
       style={{
         position: "fixed",
-        top: 10,
+        top: 12,
         left: "50%",
         transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
         width: "calc(50vw - 34px)",
-        minWidth: 760,
-        maxWidth: 1030,
-        background: "#161B22",
-        border: "1px solid #2A3140",
-        borderLeft: `4px solid ${order.store.color}`,
-        borderRadius: 10,
-        padding: "16px 20px",
+        minWidth: 780,
+        maxWidth: 1040,
+        background: "linear-gradient(90deg, rgba(7,56,67,0.96) 0%, rgba(12,73,84,0.94) 100%)",
+        border: "1px solid #0DD2C7",
+        borderRadius: 16,
+        padding: "18px 22px",
         zIndex: 999,
         display: "flex",
         alignItems: "center",
-        gap: 16,
-        boxShadow: "0 22px 55px rgba(0,0,0,0.38)",
+        gap: 18,
+        boxShadow: "0 20px 55px rgba(0,0,0,0.42)",
       }}
     >
       <div
         style={{
-          width: 42,
-          height: 42,
-          borderRadius: 10,
-          background: `${order.store.color}20`,
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          background: "rgba(5, 211, 192, 0.18)",
           display: "grid",
           placeItems: "center",
-          color: order.store.color,
-          fontSize: 18,
+          color: "#4CFFF0",
+          fontSize: 20,
           flexShrink: 0,
         }}
       >
@@ -259,61 +258,42 @@ const NotificationToast = ({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            color: "#F0F6FC",
-            fontSize: 13,
+            color: "#E8FFFD",
+            fontSize: 16,
             fontWeight: 900,
-            letterSpacing: 0.7,
-            marginBottom: 5,
+            marginBottom: 4,
+            lineHeight: 1,
           }}
         >
-          NEW ORDER
+          New Order #{order.id}
         </div>
 
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 14,
-          }}
-        >
-          <span
-            style={{
-              color: "#F0F6FC",
-              fontSize: 28,
-              fontWeight: 900,
-              fontFamily: "monospace",
-              lineHeight: 1,
-            }}
-          >
-            #{order.id}
-          </span>
-
-          <span
-            style={{
-              color: "#F0F6FC",
-              fontSize: 30,
-              fontWeight: 900,
-              fontFamily: "monospace",
-              lineHeight: 1,
-            }}
-          >
-            ₾{order.total.toFixed(0)}
-          </span>
-        </div>
-
-        <div
-          style={{
-            color: "#8B949E",
-            fontSize: 13,
-            marginTop: 6,
+            color: "rgba(232,255,253,0.74)",
+            fontSize: 15,
+            fontWeight: 600,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
           }}
         >
-          {order.store.short} · {order.items.map((i) => `${i.name} ×${i.qty}`).join(", ")}
+          {order.store.short} • {order.region} •{" "}
+          {order.items.map((i) => `${i.name} x${i.qty}`).join(", ")}
         </div>
+      </div>
+
+      <div
+        style={{
+          color: "#19F0CF",
+          fontSize: 32,
+          fontWeight: 900,
+          fontFamily: "monospace",
+          whiteSpace: "nowrap",
+          lineHeight: 1,
+        }}
+      >
+        ₾{order.total.toFixed(2)}
       </div>
     </div>
   );
@@ -361,6 +341,7 @@ export default function Dashboard() {
       { city: "Batumi", revenue: 7680 },
       { city: "Kutaisi", revenue: 5458 },
       { city: "Rustavi", revenue: 2910 },
+      { city: "Gori", revenue: 748 },
     ];
 
     setStats(initialStats);
@@ -406,13 +387,12 @@ export default function Dashboard() {
       }));
 
       setRegionStats((prev) => {
-        const region = pick(REGIONS);
-        const found = prev.find((r) => r.city === region);
+        const found = prev.find((r) => r.city === order.region);
 
-        if (!found) return [...prev, { city: region, revenue: amount }];
+        if (!found) return [...prev, { city: order.region, revenue: amount }];
 
         return prev.map((r) =>
-          r.city === region ? { ...r, revenue: r.revenue + amount } : r
+          r.city === order.region ? { ...r, revenue: r.revenue + amount } : r
         );
       });
     }, rand(5000, 8000));
@@ -435,13 +415,13 @@ export default function Dashboard() {
   }, [orders, filter]);
 
   const colors = {
-    bg: "#0D1117",
-    card: "#161B22",
-    border: "#21262D",
-    t1: "#F0F6FC",
-    t2: "#C9D1D9",
-    t3: "#8B949E",
-    t4: "#484F58",
+    bg: "#0A1018",
+    card: "#131A23",
+    border: "#232B36",
+    t1: "#F3F7FC",
+    t2: "#D7DFE9",
+    t3: "#8E9BAB",
+    t4: "#566171",
     green: "#34D399",
   };
 
@@ -459,7 +439,7 @@ export default function Dashboard() {
     };
   });
 
-  const sortedRegions = [...regionStats].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const sortedRegions = [...regionStats].sort((a, b) => b.revenue - a.revenue).slice(0, 6);
 
   return (
     <div
@@ -468,8 +448,33 @@ export default function Dashboard() {
         background: colors.bg,
         color: colors.t1,
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        overflow: "hidden",
       }}
     >
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
+
+        html, body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          background: ${colors.bg};
+        }
+
+        .hide-scrollbar {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
+        }
+      `}</style>
+
       {notifications.map((notification) => (
         <NotificationToast
           key={`${notification.id}-${notification.ts}`}
@@ -478,56 +483,58 @@ export default function Dashboard() {
         />
       ))}
 
-      <div style={{ padding: "12px 18px 16px", paddingTop: 86 }}>
+      <div style={{ padding: "14px 20px 18px", paddingTop: 96, height: "100vh", overflow: "hidden" }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 14,
+            marginBottom: 16,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span
               style={{
-                fontSize: 42,
+                fontSize: 52,
                 fontWeight: 900,
                 color: colors.t1,
-                letterSpacing: -0.8,
+                letterSpacing: -1.1,
                 lineHeight: 1,
               }}
             >
               MEAMA
             </span>
-            <span style={{ color: colors.t4, fontSize: 16 }}>|</span>
-            <span style={{ color: colors.t3, fontSize: 18, fontWeight: 600 }}>Live Operations</span>
+
+            <span style={{ color: colors.t4, fontSize: 20 }}>|</span>
+
+            <span style={{ color: colors.t3, fontSize: 24, fontWeight: 600 }}>Live Operations</span>
 
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
-                marginLeft: 4,
-                background: "#06251C",
-                border: "1px solid #065F46",
-                padding: "6px 13px",
-                borderRadius: 7,
+                gap: 7,
+                marginLeft: 6,
+                background: "#062B1F",
+                border: "1px solid #0B7A57",
+                padding: "7px 14px",
+                borderRadius: 8,
               }}
             >
               <div
                 style={{
-                  width: 8,
-                  height: 8,
+                  width: 9,
+                  height: 9,
                   borderRadius: "50%",
                   background: colors.green,
                 }}
               />
-              <span style={{ color: colors.green, fontSize: 12, fontWeight: 800 }}>LIVE</span>
+              <span style={{ color: colors.green, fontSize: 13, fontWeight: 900 }}>LIVE</span>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ color: colors.t3, fontSize: 15 }}>
+            <span style={{ color: colors.t3, fontSize: 20 }}>
               {time.toLocaleDateString("en-US", {
                 day: "2-digit",
                 month: "short",
@@ -538,10 +545,10 @@ export default function Dashboard() {
             <span
               style={{
                 color: colors.t1,
-                fontSize: 32,
-                fontWeight: 800,
+                fontSize: 42,
+                fontWeight: 900,
                 fontFamily: "monospace",
-                letterSpacing: 1,
+                letterSpacing: 0.8,
                 lineHeight: 1,
               }}
             >
@@ -559,7 +566,7 @@ export default function Dashboard() {
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             gap: 12,
-            marginBottom: 14,
+            marginBottom: 12,
           }}
         >
           {[
@@ -569,7 +576,7 @@ export default function Dashboard() {
               pct: "23.5%",
               delta: `+₾${rand(300, 900)}`,
               sparkData: spark.revenue,
-              sparkColor: "#34D399",
+              sparkColor: "#24E3B0",
             },
             {
               label: "Today Orders",
@@ -577,7 +584,7 @@ export default function Dashboard() {
               pct: "16.1%",
               delta: `+${rand(9, 24)}`,
               sparkData: spark.orders,
-              sparkColor: "#F87171",
+              sparkColor: "#FF6B74",
             },
             {
               label: "MTD Revenue",
@@ -585,7 +592,7 @@ export default function Dashboard() {
               pct: "19.5%",
               delta: `+₾${rand(2000, 8000)}`,
               sparkData: spark.mtdRevenue,
-              sparkColor: "#FBBF24",
+              sparkColor: "#FFC928",
             },
             {
               label: "MTD Orders",
@@ -593,7 +600,7 @@ export default function Dashboard() {
               pct: "11.2%",
               delta: `+${rand(70, 220)}`,
               sparkData: spark.mtdOrders,
-              sparkColor: "#22D3EE",
+              sparkColor: "#2DD9FF",
             },
           ].map((kpi, index) => (
             <div
@@ -601,23 +608,23 @@ export default function Dashboard() {
               style={{
                 background: colors.card,
                 border: `1px solid ${colors.border}`,
-                borderRadius: 8,
-                padding: "16px 20px",
+                borderRadius: 10,
+                padding: "18px 18px 16px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                minHeight: 136,
+                minHeight: 146,
                 overflow: "hidden",
               }}
             >
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div
                   style={{
-                    color: colors.t3,
-                    fontSize: 14,
+                    color: colors.t2,
+                    fontSize: 18,
                     fontWeight: 700,
                     marginBottom: 10,
-                    letterSpacing: 0.2,
+                    lineHeight: 1.1,
                   }}
                 >
                   {kpi.label}
@@ -626,11 +633,11 @@ export default function Dashboard() {
                 <div
                   style={{
                     color: colors.t1,
-                    fontSize: 36,
+                    fontSize: 52,
                     fontWeight: 900,
                     fontFamily: "monospace",
-                    letterSpacing: -0.8,
-                    lineHeight: 1.02,
+                    letterSpacing: -1.2,
+                    lineHeight: 0.95,
                   }}
                 >
                   {kpi.value}
@@ -640,28 +647,34 @@ export default function Dashboard() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
-                    marginTop: 10,
+                    gap: 8,
+                    marginTop: 12,
                     flexWrap: "wrap",
                   }}
                 >
                   <span
                     style={{
-                      color: colors.green,
-                      fontSize: 13,
-                      fontWeight: 800,
+                      color: "#31F0AA",
+                      fontSize: 18,
+                      fontWeight: 900,
                     }}
                   >
                     ↗ {kpi.pct}
                   </span>
-                  <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
+                  <span
+                    style={{
+                      color: colors.t4,
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
                     ({kpi.delta})
                   </span>
                 </div>
               </div>
 
-              <div style={{ marginTop: 0, marginLeft: 14, flexShrink: 0 }}>
-                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={128} h={50} />
+              <div style={{ marginLeft: 12, flexShrink: 0, paddingTop: 4 }}>
+                <Sparkline data={kpi.sparkData} color={kpi.sparkColor} w={150} h={60} />
               </div>
             </div>
           ))}
@@ -672,7 +685,9 @@ export default function Dashboard() {
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             gap: 12,
-            alignItems: "start",
+            alignItems: "stretch",
+            height: "calc(100vh - 302px)",
+            minHeight: 500,
           }}
         >
           <div
@@ -680,12 +695,11 @@ export default function Dashboard() {
               gridColumn: "1 / span 3",
               background: colors.card,
               border: `1px solid ${colors.border}`,
-              borderRadius: 8,
+              borderRadius: 10,
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
-              height: "calc(100vh - 284px)",
-              minHeight: 520,
+              minHeight: 0,
             }}
           >
             <div
@@ -694,7 +708,7 @@ export default function Dashboard() {
                 alignItems: "center",
                 borderBottom: `1px solid ${colors.border}`,
                 padding: "0 18px",
-                minHeight: 54,
+                minHeight: 60,
               }}
             >
               {["All", ...STORES.map((store) => store.short)].map((tab) => (
@@ -705,9 +719,9 @@ export default function Dashboard() {
                     background: "none",
                     border: "none",
                     cursor: "pointer",
-                    padding: "14px 14px",
+                    padding: "16px 15px",
                     color: filter === tab ? colors.t1 : colors.t4,
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: filter === tab ? 800 : 600,
                     borderBottom:
                       filter === tab ? `2px solid ${colors.t1}` : "2px solid transparent",
@@ -718,7 +732,7 @@ export default function Dashboard() {
                 </button>
               ))}
               <div style={{ flex: 1 }} />
-              <span style={{ color: colors.t4, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ color: colors.t4, fontSize: 13, fontWeight: 700 }}>
                 {filteredOrders.length} orders
               </span>
             </div>
@@ -726,112 +740,135 @@ export default function Dashboard() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "96px 110px minmax(320px, 1fr) 92px 104px 118px 76px",
+                gridTemplateColumns: "100px 138px minmax(300px, 1.5fr) 116px 92px 120px 94px 110px",
                 padding: "12px 18px",
                 borderBottom: `1px solid ${colors.border}`,
                 color: colors.t4,
-                fontSize: 11,
-                fontWeight: 700,
+                fontSize: 12,
+                fontWeight: 800,
                 letterSpacing: 0.35,
               }}
             >
               <div># Order ID</div>
               <div>Store</div>
               <div>Items</div>
+              <div>Location</div>
               <div style={{ textAlign: "center" }}>Qty</div>
               <div style={{ textAlign: "right" }}>Total</div>
               <div style={{ textAlign: "center" }}>Payment</div>
-              <div style={{ textAlign: "center" }}>Time</div>
+              <div style={{ textAlign: "right" }}>Time</div>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto" }}>
+            <div className="hide-scrollbar" style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
               {filteredOrders.map((order, index) => (
                 <div
                   key={`${order.id}-${order.ts}`}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "96px 110px minmax(320px, 1fr) 92px 104px 118px 76px",
+                    gridTemplateColumns: "100px 138px minmax(300px, 1.5fr) 116px 92px 120px 94px 110px",
                     padding: "14px 18px",
                     borderBottom: `1px solid ${colors.border}33`,
                     alignItems: "center",
-                    background: index === 0 ? `${order.store.color}07` : "transparent",
-                    transition: "background 0.35s",
-                    minHeight: 58,
+                    background:
+                      index === 0
+                        ? "linear-gradient(90deg, rgba(39,52,73,0.32) 0%, rgba(25,30,38,0.04) 100%)"
+                        : "transparent",
+                    minHeight: 62,
                   }}
                 >
                   <div
                     style={{
-                      color: colors.t3,
+                      color: "#B7C4D4",
                       fontFamily: "monospace",
-                      fontSize: 13,
-                      fontWeight: 600,
+                      fontSize: 15,
+                      fontWeight: 700,
                     }}
                   >
                     {order.id}
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                     <div
                       style={{
-                        width: 7,
-                        height: 7,
+                        width: 8,
+                        height: 8,
                         borderRadius: "50%",
                         background: order.store.color,
                         flexShrink: 0,
                       }}
                     />
-                    <span style={{ color: colors.t2, fontSize: 13, fontWeight: 600 }}>
+                    <span
+                      style={{
+                        color: order.store.color,
+                        fontSize: 15,
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {order.store.short}
                     </span>
                   </div>
 
                   <div
                     style={{
-                      color: colors.t2,
-                      fontSize: 13,
+                      color: "#D3DCE6",
+                      fontSize: 15,
+                      fontWeight: 600,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       paddingRight: 10,
                     }}
                   >
-                    {order.items.map((item) => item.name).join(", ")}
+                    {order.items.map((item) => `${item.name} x${item.qty}`).join(", ")}
                   </div>
 
                   <div
                     style={{
                       color: colors.t3,
-                      fontSize: 13,
-                      fontWeight: 600,
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {order.region}
+                  </div>
+
+                  <div
+                    style={{
+                      color: colors.t2,
+                      fontSize: 15,
+                      fontWeight: 700,
                       textAlign: "center",
                     }}
                   >
-                    {order.itemCount} items
+                    {order.itemCount}
                   </div>
 
                   <div
                     style={{
                       color: colors.t1,
-                      fontWeight: 800,
-                      fontSize: 14,
+                      fontWeight: 900,
+                      fontSize: 18,
                       fontFamily: "monospace",
                       textAlign: "right",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     ₾{order.total.toFixed(0)}
                   </div>
 
-                  <div style={{ textAlign: "center", display: "flex", justifyContent: "center" }}>
-                    <Badge text={order.status} type={order.status} />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <PaymentTag type={order.status} />
                   </div>
 
                   <div
                     style={{
-                      textAlign: "center",
-                      color: colors.t2,
-                      fontSize: 13,
+                      textAlign: "right",
+                      color: "#EEF4FF",
+                      fontSize: 15,
                       fontFamily: "monospace",
-                      fontWeight: 600,
+                      fontWeight: 800,
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {order.time}
@@ -844,169 +881,194 @@ export default function Dashboard() {
           <div
             style={{
               gridColumn: "4",
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-              minWidth: 0,
+              display: "grid",
+              gridTemplateRows: "1fr 0.82fr",
+              gap: 12,
+              minHeight: 0,
             }}
           >
             <div
               style={{
                 background: colors.card,
                 border: `1px solid ${colors.border}`,
-                borderRadius: 8,
-                padding: 16,
+                borderRadius: 10,
+                padding: 18,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-start",
+                minHeight: 0,
               }}
             >
               <div
                 style={{
-                  color: colors.t2,
-                  fontSize: 12,
+                  color: colors.t1,
+                  fontSize: 18,
                   fontWeight: 900,
-                  letterSpacing: 0.65,
-                  marginBottom: 16,
+                  letterSpacing: 0.5,
+                  marginBottom: 18,
                   textTransform: "uppercase",
                 }}
               >
                 Store Performance
               </div>
 
-              {storePerformanceRows.map((store) => (
-                <div key={store.id} style={{ marginBottom: 18 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: 6,
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: 2,
-                          background: store.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span
-                        style={{
-                          color: colors.t2,
-                          fontSize: 13,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {store.short}
-                      </span>
-                    </div>
-
-                    <span
-                      style={{
-                        color: colors.t1,
-                        fontSize: 15,
-                        fontWeight: 900,
-                        fontFamily: "monospace",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      ₾{store.revenue.toLocaleString("en-US", {
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                      marginBottom: 8,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
-                      {store.orders} orders
-                    </span>
-                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
-                      avg ₾{store.avg.toFixed(1)}
-                    </span>
-                    <span style={{ color: colors.t4, fontSize: 11, fontWeight: 600 }}>
-                      {store.share.toFixed(1)}%
-                    </span>
-                  </div>
-
-                  <div style={{ height: 4, borderRadius: 999, background: colors.border }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {storePerformanceRows.map((store) => (
+                  <div key={store.id}>
                     <div
                       style={{
-                        height: "100%",
-                        borderRadius: 999,
-                        background: store.color,
-                        width: `${store.share}%`,
-                        transition: "width 0.8s ease",
-                        opacity: 0.95,
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto",
+                        gap: 12,
+                        alignItems: "start",
+                        marginBottom: 8,
                       }}
-                    />
+                    >
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 5 }}>
+                          <div
+                            style={{
+                              width: 9,
+                              height: 9,
+                              borderRadius: 2,
+                              background: store.color,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <span
+                            style={{
+                              color: colors.t1,
+                              fontSize: 18,
+                              fontWeight: 800,
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {store.short}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 12,
+                            flexWrap: "wrap",
+                            color: colors.t3,
+                            fontSize: 13,
+                            fontWeight: 700,
+                          }}
+                        >
+                          <span>{store.orders} orders</span>
+                          <span>avg ₾{store.avg.toFixed(1)}</span>
+                          <span>{store.share.toFixed(1)}%</span>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          color: colors.t1,
+                          fontSize: 22,
+                          fontWeight: 900,
+                          fontFamily: "monospace",
+                          whiteSpace: "nowrap",
+                          lineHeight: 1,
+                        }}
+                      >
+                        ₾{store.revenue.toLocaleString("en-US", {
+                          maximumFractionDigits: 0,
+                        })}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        height: 4,
+                        borderRadius: 999,
+                        background: "#27303A",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          borderRadius: 999,
+                          background: store.color,
+                          width: `${Math.max(store.share, 8)}%`,
+                          transition: "width 0.8s ease",
+                          opacity: 0.95,
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div
               style={{
                 background: colors.card,
                 border: `1px solid ${colors.border}`,
-                borderRadius: 8,
-                padding: 16,
+                borderRadius: 10,
+                padding: 18,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
               }}
             >
               <div
                 style={{
-                  color: colors.t2,
-                  fontSize: 12,
+                  color: colors.t1,
+                  fontSize: 18,
                   fontWeight: 900,
-                  letterSpacing: 0.65,
-                  marginBottom: 14,
+                  letterSpacing: 0.5,
+                  marginBottom: 16,
                   textTransform: "uppercase",
                 }}
               >
                 Regions by Revenue
               </div>
 
-              {sortedRegions.map((region, index) => (
-                <div
-                  key={region.city}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0",
-                    borderBottom:
-                      index < sortedRegions.length - 1
-                        ? `1px solid ${colors.border}33`
-                        : "none",
-                    gap: 12,
-                  }}
-                >
-                  <span style={{ color: colors.t3, fontSize: 13, fontWeight: 600 }}>
-                    {region.city}
-                  </span>
-                  <span
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {sortedRegions.map((region, index) => (
+                  <div
+                    key={region.city}
                     style={{
-                      color: colors.t2,
-                      fontSize: 14,
-                      fontWeight: 800,
-                      fontFamily: "monospace",
-                      whiteSpace: "nowrap",
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      alignItems: "center",
+                      gap: 12,
+                      paddingBottom: 10,
+                      borderBottom:
+                        index < sortedRegions.length - 1
+                          ? `1px solid ${colors.border}33`
+                          : "none",
                     }}
                   >
-                    ₾{region.revenue.toLocaleString("en-US", {
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      style={{
+                        color: "#D5DFEA",
+                        fontSize: 17,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {region.city}
+                    </span>
+
+                    <span
+                      style={{
+                        color: colors.t1,
+                        fontSize: 20,
+                        fontWeight: 900,
+                        fontFamily: "monospace",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      ₾{region.revenue.toLocaleString("en-US", {
+                        maximumFractionDigits: 0,
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
