@@ -1,3 +1,4 @@
+"use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type StoreId = "vending" | "georgia" | "collect" | "b2b" | "franchise";
