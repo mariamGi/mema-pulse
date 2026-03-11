@@ -244,7 +244,7 @@ const NotificationToast = ({
       style={{
         position: "fixed",
         top: 30,
-        left: "calc(50% + 34px)",
+        left: "calc(50% + 42px)",
         transform: `translateX(-50%) translateY(${visible ? "0" : "-12px"})`,
         opacity: visible ? 1 : 0,
         transition: "all 0.28s ease",
